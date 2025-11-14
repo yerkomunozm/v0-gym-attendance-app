@@ -30,15 +30,22 @@ export function ScanClient() {
   }>({ type: null, message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const supabase = createClient();
-
   useEffect(() => {
     async function loadStudents() {
+      console.log("[v0] Loading students...");
+      const supabase = createClient();
+      
       const { data, error } = await supabase
         .from("students")
         .select("*")
-        .eq("is_active", true)
+        .eq("membership_status", "active")
         .order("name");
+
+      console.log("[v0] Students query result:", { data, error, count: data?.length });
+
+      if (error) {
+        console.error("[v0] Error loading students:", error);
+      }
 
       if (!error && data) {
         setStudents(data);
@@ -47,7 +54,7 @@ export function ScanClient() {
     }
 
     loadStudents();
-  }, [supabase]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +62,8 @@ export function ScanClient() {
     setStatus({ type: null, message: "" });
 
     try {
+      const supabase = createClient();
+      
       const { data: trainer, error: trainerError } = await supabase
         .from("trainers")
         .select("*")
@@ -150,6 +159,8 @@ export function ScanClient() {
                         placeholder={
                           isLoadingStudents
                             ? "Cargando alumnos..."
+                            : students.length === 0
+                            ? "No hay alumnos registrados"
                             : "Selecciona tu nombre"
                         }
                       />
@@ -168,7 +179,11 @@ export function ScanClient() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-slate-500 mt-1">
-                    Selecciona tu nombre de la lista de alumnos registrados
+                    {isLoadingStudents
+                      ? "Cargando alumnos..."
+                      : students.length === 0
+                      ? "No hay alumnos registrados. Ve a la sección de Alumnos para agregar uno."
+                      : `${students.length} alumno(s) disponible(s)`}
                   </p>
                 </div>
 
