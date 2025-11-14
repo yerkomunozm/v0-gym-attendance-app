@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trainer } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, Trash2, Download, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Download, ArrowLeft, Search } from 'lucide-react';
 import { QRCodeSVG } from "qrcode.react";
 import Link from "next/link";
 
@@ -18,6 +18,7 @@ interface TrainersClientProps {
 export function TrainersClient({ initialTrainers }: TrainersClientProps) {
   const [trainers, setTrainers] = useState<Trainer[]>(initialTrainers);
   const [isAdding, setIsAdding] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [newTrainer, setNewTrainer] = useState({
     name: "",
     email: "",
@@ -26,6 +27,10 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
   });
 
   const supabase = createClient();
+
+  const filteredTrainers = trainers.filter((trainer) =>
+    trainer.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleAddTrainer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,8 +197,25 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
             </Card>
           )}
 
+          <div className="mb-6">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <Input
+                placeholder="Buscar entrenador por nombre..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {searchQuery && (
+              <p className="text-sm text-slate-600 mt-2">
+                Mostrando {filteredTrainers.length} de {trainers.length} entrenadores
+              </p>
+            )}
+          </div>
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {trainers.map((trainer) => (
+            {filteredTrainers.map((trainer) => (
               <Card key={trainer.id} className="relative">
                 <CardHeader>
                   <CardTitle className="text-lg">{trainer.name}</CardTitle>
@@ -251,10 +273,12 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
             ))}
           </div>
 
-          {trainers.length === 0 && !isAdding && (
+          {filteredTrainers.length === 0 && !isAdding && (
             <div className="text-center py-12">
               <p className="text-slate-500 text-lg">
-                No hay entrenadores registrados. Agrega uno para comenzar.
+                {searchQuery
+                  ? "No se encontraron entrenadores con ese nombre."
+                  : "No hay entrenadores registrados. Agrega uno para comenzar."}
               </p>
             </div>
           )}
