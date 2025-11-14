@@ -36,9 +36,8 @@ export function SelectStudentClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Redirect back if no trainer info
     if (!trainerId || !trainerName) {
-      router.push("/scan");
+      router.push("/");
       return;
     }
 
@@ -124,10 +123,10 @@ export function SelectStudentClient() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          <Link href="/scan">
+          <Link href="/">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Volver
+              Volver al inicio
             </Button>
           </Link>
 
@@ -138,9 +137,9 @@ export function SelectStudentClient() {
                   <UserCircle className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl">Seleccionar Alumno</CardTitle>
+                  <CardTitle className="text-2xl">Registrar Asistencia</CardTitle>
                   <p className="text-sm text-slate-600 mt-1">
-                    Paso 2: Selecciona el alumno para {trainerName}
+                    Selecciona tu nombre para registrar asistencia
                   </p>
                 </div>
               </div>
@@ -154,7 +153,7 @@ export function SelectStudentClient() {
                 </div>
 
                 <div>
-                  <Label htmlFor="student">Nombre del Alumno *</Label>
+                  <Label htmlFor="student">Tu Nombre *</Label>
                   <Select
                     value={studentId}
                     onValueChange={setStudentId}
@@ -168,7 +167,7 @@ export function SelectStudentClient() {
                             ? "Cargando alumnos..."
                             : students.length === 0
                             ? "No hay alumnos registrados"
-                            : "Selecciona el nombre del alumno"
+                            : "Selecciona tu nombre"
                         }
                       />
                     </SelectTrigger>
@@ -189,7 +188,7 @@ export function SelectStudentClient() {
                     {isLoadingStudents
                       ? "Cargando alumnos..."
                       : students.length === 0
-                      ? "No hay alumnos registrados. Ve a la sección de Alumnos para agregar uno."
+                      ? "No hay alumnos registrados. Contacta al administrador."
                       : `${students.length} alumno(s) disponible(s)`}
                   </p>
                 </div>
@@ -200,7 +199,7 @@ export function SelectStudentClient() {
                     id="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Agrega notas adicionales sobre la asistencia..."
+                    placeholder="Agrega notas adicionales sobre tu clase..."
                     rows={3}
                   />
                 </div>
