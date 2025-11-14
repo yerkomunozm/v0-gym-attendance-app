@@ -13,17 +13,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, CheckCircle, XCircle, UserCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, UserCircle } from 'lucide-react';
 import Link from "next/link";
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Student } from "@/lib/types";
 
-export function RegisterAttendanceClient() {
+export function SelectStudentClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  
   const trainerId = searchParams.get("trainerId");
   const trainerName = searchParams.get("trainerName");
-
+  
   const [studentId, setStudentId] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
@@ -35,7 +36,8 @@ export function RegisterAttendanceClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!trainerId) {
+    // Redirect back if no trainer info
+    if (!trainerId || !trainerName) {
       router.push("/scan");
       return;
     }
@@ -60,7 +62,7 @@ export function RegisterAttendanceClient() {
     }
 
     loadStudents();
-  }, [trainerId, router]);
+  }, [trainerId, trainerName, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +71,6 @@ export function RegisterAttendanceClient() {
 
     try {
       const supabase = createClient();
-      
       const selectedStudent = students.find((s) => s.id === studentId);
 
       const { error: attendanceError } = await supabase
@@ -97,6 +98,7 @@ export function RegisterAttendanceClient() {
         message: `Asistencia de ${selectedStudent?.name} registrada con ${trainerName}`,
       });
       
+      // Clear form after success
       setStudentId("");
       setNotes("");
       
@@ -114,7 +116,7 @@ export function RegisterAttendanceClient() {
     }
   };
 
-  if (!trainerId) {
+  if (!trainerId || !trainerName) {
     return null;
   }
 
@@ -132,24 +134,25 @@ export function RegisterAttendanceClient() {
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <UserCheck className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <UserCircle className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl">Registro de Asistencia</CardTitle>
+                  <CardTitle className="text-2xl">Seleccionar Alumno</CardTitle>
                   <p className="text-sm text-slate-600 mt-1">
-                    Paso 2: Selecciona el nombre del alumno
+                    Paso 2: Selecciona el alumno para {trainerName}
                   </p>
-                  {trainerName && (
-                    <p className="text-xs text-green-600 mt-1 font-medium">
-                      Entrenador: {trainerName}
-                    </p>
-                  )}
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-green-800 font-medium">
+                    Entrenador: {trainerName}
+                  </p>
+                </div>
+
                 <div>
                   <Label htmlFor="student">Nombre del Alumno *</Label>
                   <Select
@@ -219,7 +222,7 @@ export function RegisterAttendanceClient() {
                   </div>
                 )}
 
-                <Button type="submit" className="w-full" disabled={isSubmitting || status.type === "success"}>
+                <Button type="submit" className="w-full" disabled={isSubmitting || isLoadingStudents}>
                   {isSubmitting ? "Registrando..." : "Registrar Asistencia"}
                 </Button>
               </form>

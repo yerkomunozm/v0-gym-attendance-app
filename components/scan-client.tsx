@@ -17,7 +17,6 @@ import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft, CheckCircle, XCircle, Scan } from 'lucide-react';
 import Link from "next/link";
 import type { Student } from "@/lib/types";
-import { useRouter } from 'next/navigation';
 
 export function ScanClient() {
   const [studentId, setStudentId] = useState("");
@@ -30,7 +29,6 @@ export function ScanClient() {
     message: string;
   }>({ type: null, message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     async function loadStudents() {
@@ -121,41 +119,6 @@ export function ScanClient() {
     }
   };
 
-  const handleVerifyTrainer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setStatus({ type: null, message: "" });
-
-    try {
-      const supabase = createClient();
-      
-      const { data: trainer, error: trainerError } = await supabase
-        .from("trainers")
-        .select("*")
-        .eq("qr_code", qrCode)
-        .single();
-
-      if (trainerError || !trainer) {
-        setStatus({
-          type: "error",
-          message: "Código QR no válido. Entrenador no encontrado.",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
-      router.push(`/scan/register?trainerId=${trainer.id}&trainerName=${encodeURIComponent(trainer.name)}`);
-    } catch (error) {
-      console.error("Error:", error);
-      setStatus({
-        type: "error",
-        message: "Error inesperado al verificar el código QR.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="container mx-auto px-4 py-8">
@@ -182,7 +145,7 @@ export function ScanClient() {
               </div>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleVerifyTrainer} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <Label htmlFor="student">Nombre del Alumno *</Label>
                   <Select

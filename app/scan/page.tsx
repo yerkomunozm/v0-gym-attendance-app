@@ -1,8 +1,5 @@
-import { ScanClient } from "@/components/scan-client";
+import { ScanTrainerClient } from "@/components/scan-trainer-client";
 
 export default function ScanPage() {
-  // Additional code can be inserted here if needed
-  return <ScanClient />;
+  return <ScanTrainerClient />;
 }
-
-// Additional code can be inserted here if needed

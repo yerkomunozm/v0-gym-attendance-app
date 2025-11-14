@@ -1,5 +1,12 @@
-import { RegisterAttendanceClient } from "@/components/register-attendance-client";
+"use client";
 
-export default function RegisterAttendancePage() {
-  return <RegisterAttendanceClient />;
+import { Suspense } from "react";
+import { SelectStudentClient } from "@/components/select-student-client";
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <SelectStudentClient />
+    </Suspense>
+  );
 }
