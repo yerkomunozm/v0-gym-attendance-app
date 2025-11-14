@@ -112,10 +112,10 @@ export function SelectStudentClient() {
       setStudentId("");
       setNotes("");
       
-      // Redirect to home after 2 seconds
+      // Redirect to success page after 1.5 seconds
       setTimeout(() => {
-        router.push("/");
-      }, 2000);
+        router.push("/scan/success");
+      }, 1500);
     } catch (error) {
       console.error("Error:", error);
       setStatus({
