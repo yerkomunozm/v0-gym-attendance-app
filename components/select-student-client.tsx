@@ -25,6 +25,12 @@ export function SelectStudentClient() {
   const trainerId = searchParams.get("trainerId");
   const trainerName = searchParams.get("trainerName");
   
+  console.log("[v0] URL Search Params:", {
+    trainerId,
+    trainerName,
+    allParams: Object.fromEntries(searchParams.entries())
+  });
+  
   const [studentId, setStudentId] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
@@ -36,12 +42,16 @@ export function SelectStudentClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    console.log("[v0] useEffect triggered - trainerId:", trainerId, "trainerName:", trainerName);
+    
     if (!trainerId || !trainerName) {
+      console.log("[v0] Missing parameters, redirecting to home");
       router.push("/");
       return;
     }
 
     async function loadStudents() {
+      console.log("[v0] Loading students...");
       const supabase = createClient();
       
       const { data, error } = await supabase
@@ -51,10 +61,11 @@ export function SelectStudentClient() {
         .order("name");
 
       if (error) {
-        console.error("Error loading students:", error);
+        console.error("[v0] Error loading students:", error);
       }
 
       if (!error && data) {
+        console.log("[v0] Students loaded:", data.length);
         setStudents(data);
       }
       setIsLoadingStudents(false);
@@ -116,7 +127,27 @@ export function SelectStudentClient() {
   };
 
   if (!trainerId || !trainerName) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600">Parámetros Faltantes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-slate-600 mb-4">
+              No se encontraron los parámetros necesarios en la URL.
+            </p>
+            <div className="bg-slate-100 p-4 rounded-lg mb-4">
+              <p className="text-xs font-mono">trainerId: {trainerId || "null"}</p>
+              <p className="text-xs font-mono">trainerName: {trainerName || "null"}</p>
+            </div>
+            <Link href="/">
+              <Button className="w-full">Volver al inicio</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
