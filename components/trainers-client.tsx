@@ -27,21 +27,15 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
 
   const supabase = createClient();
 
-  const generateQRCode = () => {
-    return `TRAINER-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-  };
-
   const handleAddTrainer = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const qrCode = generateQRCode();
 
     const { data, error } = await supabase
       .from("trainers")
       .insert([
         {
           ...newTrainer,
-          qr_code: qrCode,
+          qr_code: "temp",
         },
       ])
       .select()
@@ -54,7 +48,21 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
     }
 
     if (data) {
-      setTrainers([...trainers, data]);
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const qrUrl = `${baseUrl}/scan/register?trainerId=${data.id}&trainerName=${encodeURIComponent(data.name)}`;
+      
+      const { data: updatedData, error: updateError } = await supabase
+        .from("trainers")
+        .update({ qr_code: qrUrl })
+        .eq("id", data.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Error updating QR code:", updateError);
+      }
+
+      setTrainers([...trainers, updatedData || data]);
       setNewTrainer({ name: "", email: "", phone: "", specialty: "" });
       setIsAdding(false);
     }
@@ -225,6 +233,9 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
                         size={150}
                       />
                     </div>
+                    <p className="text-xs text-center text-slate-500 px-2">
+                      Escanea este QR con la cámara del teléfono para registrar asistencia
+                    </p>
                     <Button
                       size="sm"
                       variant="outline"

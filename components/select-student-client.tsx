@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -14,15 +13,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, CheckCircle, XCircle, Scan } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, UserCircle } from 'lucide-react';
 import Link from "next/link";
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Student } from "@/lib/types";
 
-export function ScanClient() {
+export function SelectStudentClient() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  const trainerId = searchParams.get("trainerId");
+  const trainerName = searchParams.get("trainerName");
+  
+  console.log("[v0] URL Search Params:", {
+    trainerId,
+    trainerName,
+    allParams: Object.fromEntries(searchParams.entries())
+  });
+  
   const [studentId, setStudentId] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
-  const [qrCode, setQrCode] = useState("");
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<{
     type: "success" | "error" | null;
@@ -31,6 +42,14 @@ export function ScanClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    console.log("[v0] useEffect triggered - trainerId:", trainerId, "trainerName:", trainerName);
+    
+    if (!trainerId || !trainerName) {
+      console.log("[v0] Missing parameters, redirecting to home");
+      router.push("/");
+      return;
+    }
+
     async function loadStudents() {
       console.log("[v0] Loading students...");
       const supabase = createClient();
@@ -41,20 +60,19 @@ export function ScanClient() {
         .eq("membership_status", "active")
         .order("name");
 
-      console.log("[v0] Students query result:", { data, error, count: data?.length });
-
       if (error) {
         console.error("[v0] Error loading students:", error);
       }
 
       if (!error && data) {
+        console.log("[v0] Students loaded:", data.length);
         setStudents(data);
       }
       setIsLoadingStudents(false);
     }
 
     loadStudents();
-  }, []);
+  }, [trainerId, trainerName, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,29 +81,13 @@ export function ScanClient() {
 
     try {
       const supabase = createClient();
-      
-      const { data: trainer, error: trainerError } = await supabase
-        .from("trainers")
-        .select("*")
-        .eq("qr_code", qrCode)
-        .single();
-
-      if (trainerError || !trainer) {
-        setStatus({
-          type: "error",
-          message: "Código QR no válido. Entrenador no encontrado.",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
       const selectedStudent = students.find((s) => s.id === studentId);
 
       const { error: attendanceError } = await supabase
         .from("attendance")
         .insert([
           {
-            trainer_id: trainer.id,
+            trainer_id: trainerId,
             student_id: studentId,
             student_name: selectedStudent?.name || "",
             notes: notes || null,
@@ -103,21 +105,50 @@ export function ScanClient() {
 
       setStatus({
         type: "success",
-        message: `Asistencia de ${selectedStudent?.name} registrada con ${trainer.name}`,
+        message: `Asistencia de ${selectedStudent?.name} registrada con ${trainerName}`,
       });
+      
+      // Clear form after success
       setStudentId("");
-      setQrCode("");
       setNotes("");
+      
+      // Redirect to home after 2 seconds
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
     } catch (error) {
       console.error("Error:", error);
       setStatus({
         type: "error",
         message: "Error inesperado al registrar asistencia.",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (!trainerId || !trainerName) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600">Parámetros Faltantes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-slate-600 mb-4">
+              No se encontraron los parámetros necesarios en la URL.
+            </p>
+            <div className="bg-slate-100 p-4 rounded-lg mb-4">
+              <p className="text-xs font-mono">trainerId: {trainerId || "null"}</p>
+              <p className="text-xs font-mono">trainerName: {trainerName || "null"}</p>
+            </div>
+            <Link href="/">
+              <Button className="w-full">Volver al inicio</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -126,28 +157,34 @@ export function ScanClient() {
           <Link href="/">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Volver
+              Volver al inicio
             </Button>
           </Link>
 
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Scan className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <UserCircle className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl">Registro de Asistencia</CardTitle>
+                  <CardTitle className="text-2xl">Registrar Asistencia</CardTitle>
                   <p className="text-sm text-slate-600 mt-1">
-                    Selecciona tu nombre y escanea el código QR de tu entrenador
+                    Selecciona tu nombre para registrar asistencia
                   </p>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-green-800 font-medium">
+                    Entrenador: {trainerName}
+                  </p>
+                </div>
+
                 <div>
-                  <Label htmlFor="student">Nombre del Alumno *</Label>
+                  <Label htmlFor="student">Tu Nombre *</Label>
                   <Select
                     value={studentId}
                     onValueChange={setStudentId}
@@ -182,23 +219,8 @@ export function ScanClient() {
                     {isLoadingStudents
                       ? "Cargando alumnos..."
                       : students.length === 0
-                      ? "No hay alumnos registrados. Ve a la sección de Alumnos para agregar uno."
+                      ? "No hay alumnos registrados. Contacta al administrador."
                       : `${students.length} alumno(s) disponible(s)`}
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="qr-code">Código QR del Entrenador *</Label>
-                  <Input
-                    id="qr-code"
-                    required
-                    value={qrCode}
-                    onChange={(e) => setQrCode(e.target.value)}
-                    placeholder="Ej: TRAINER-1234567890-abc123"
-                    className="font-mono"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Escanea el código QR de tu entrenador o ingresa el código manualmente
                   </p>
                 </div>
 
@@ -208,7 +230,7 @@ export function ScanClient() {
                     id="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Agrega notas adicionales sobre la asistencia..."
+                    placeholder="Agrega notas adicionales sobre tu clase..."
                     rows={3}
                   />
                 </div>
@@ -230,7 +252,7 @@ export function ScanClient() {
                   </div>
                 )}
 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" className="w-full" disabled={isSubmitting || isLoadingStudents}>
                   {isSubmitting ? "Registrando..." : "Registrar Asistencia"}
                 </Button>
               </form>
