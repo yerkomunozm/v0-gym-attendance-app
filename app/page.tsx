@@ -10,10 +10,10 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-5xl font-bold mb-4 text-slate-900">
-              Sistema de Asistencias
+              Control de Asistencias
             </h1>
             <p className="text-xl text-slate-600">
-              Gestiona entrenadores y registra asistencias con códigos QR
+              Gestiona alumnos y registra asistencias con códigos QR
             </p>
           </div>
 
