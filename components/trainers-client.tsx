@@ -7,16 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trainer } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, Trash2, Download, ArrowLeft, Search } from 'lucide-react';
+import { Plus, Trash2, Download, ArrowLeft, Search, Building2 } from 'lucide-react';
 import { QRCodeSVG } from "qrcode.react";
 import Link from "next/link";
+import { useBranch } from "@/lib/contexts/branch-context";
 
 interface TrainersClientProps {
   initialTrainers: Trainer[];
 }
 
 export function TrainersClient({ initialTrainers }: TrainersClientProps) {
-  const [trainers, setTrainers] = useState<Trainer[]>(initialTrainers);
+  const { selectedBranch } = useBranch();
+  const [trainers, setTrainers] = useState<Trainer[]>(
+    initialTrainers.filter(t => !t.branch_id || (selectedBranch && t.branch_id === selectedBranch.id))
+  );
   const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [newTrainer, setNewTrainer] = useState({
@@ -35,12 +39,18 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
   const handleAddTrainer = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!selectedBranch) {
+      alert('Debes seleccionar una sede primero');
+      return;
+    }
+
     const { data, error } = await supabase
       .from("trainers")
       .insert([
         {
           ...newTrainer,
           qr_code: "temp",
+          branch_id: selectedBranch.id
         },
       ])
       .select()
@@ -117,19 +127,46 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="mb-2">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Volver
-                </Button>
-              </Link>
+              <div className="flex items-center gap-4 mb-2">
+                <Link href="/">
+                  <Button variant="ghost" size="sm">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Volver
+                  </Button>
+                </Link>
+                {selectedBranch && (
+                  <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                    <Building2 className="w-3 h-3" />
+                    {selectedBranch.name}
+                  </div>
+                )}
+              </div>
               <h1 className="text-4xl font-bold text-slate-900">Gestión de Entrenadores</h1>
             </div>
-            <Button onClick={() => setIsAdding(true)}>
+            <Button onClick={() => setIsAdding(true)} disabled={!selectedBranch}>
               <Plus className="w-4 h-4 mr-2" />
               Agregar Entrenador
             </Button>
           </div>
+
+          {!selectedBranch && (
+            <Card className="mb-8 bg-orange-50 border-orange-200">
+              <CardContent className="flex items-center justify-between p-6">
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-6 h-6 text-orange-600" />
+                  <div>
+                    <h3 className="font-semibold text-orange-900">Sede no seleccionada</h3>
+                    <p className="text-orange-700">Debes seleccionar una sede para gestionar entrenadores</p>
+                  </div>
+                </div>
+                <Link href="/branches">
+                  <Button variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-100">
+                    Seleccionar Sede
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
 
           {isAdding && (
             <Card className="mb-8">

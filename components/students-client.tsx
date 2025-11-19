@@ -9,16 +9,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Mail, Phone, Calendar, Trash2, Edit, ArrowLeft } from 'lucide-react';
+import { UserPlus, Mail, Phone, Calendar, Trash2, Edit, ArrowLeft, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useBranch } from '@/lib/contexts/branch-context';
 
 interface StudentsClientProps {
   initialStudents: Student[];
 }
 
 export default function StudentsClient({ initialStudents }: StudentsClientProps) {
-  const [students, setStudents] = useState<Student[]>(initialStudents);
+  const { selectedBranch } = useBranch();
+  const [students, setStudents] = useState<Student[]>(
+    initialStudents.filter(s => !s.branch_id || (selectedBranch && s.branch_id === selectedBranch.id))
+  );
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -35,6 +39,11 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!selectedBranch) {
+      alert('Debes seleccionar una sede primero');
+      return;
+    }
+
     if (!formData.name.trim()) {
       alert('El nombre es obligatorio');
       return;
@@ -49,6 +58,7 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
             email: formData.email || null,
             phone: formData.phone || null,
             membership_status: formData.membership_status,
+            branch_id: selectedBranch.id
           })
           .eq('id', editingId)
           .select()
@@ -66,6 +76,7 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
             email: formData.email || null,
             phone: formData.phone || null,
             membership_status: formData.membership_status,
+            branch_id: selectedBranch.id
           }])
           .select()
           .single();
@@ -146,17 +157,42 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
                     Volver
                   </Button>
                 </Link>
+                {selectedBranch && (
+                  <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                    <Building2 className="w-3 h-3" />
+                    {selectedBranch.name}
+                  </div>
+                )}
               </div>
               <h1 className="text-4xl font-bold text-slate-900">Gestión de Alumnos</h1>
               <p className="text-slate-600 mt-2">Administra la información de los alumnos registrados</p>
             </div>
             {!isAdding && (
-              <Button onClick={() => setIsAdding(true)} size="lg">
+              <Button onClick={() => setIsAdding(true)} size="lg" disabled={!selectedBranch}>
                 <UserPlus className="w-5 h-5 mr-2" />
                 Agregar Alumno
               </Button>
             )}
           </div>
+
+          {!selectedBranch && (
+            <Card className="mb-8 bg-orange-50 border-orange-200">
+              <CardContent className="flex items-center justify-between p-6">
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-6 h-6 text-orange-600" />
+                  <div>
+                    <h3 className="font-semibold text-orange-900">Sede no seleccionada</h3>
+                    <p className="text-orange-700">Debes seleccionar una sede para gestionar alumnos</p>
+                  </div>
+                </div>
+                <Link href="/branches">
+                  <Button variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-100">
+                    Seleccionar Sede
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
 
           {isAdding && (
             <Card className="mb-8">
