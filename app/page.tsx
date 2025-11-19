@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, QrCode, History, GraduationCap, Building2 } from 'lucide-react';
+import { Users, QrCode, History, GraduationCap, Building2, CreditCard } from 'lucide-react';
 import { useBranch } from "@/lib/contexts/branch-context";
 
 export default function Home() {
@@ -53,6 +53,25 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <Link href="/branches">
+                  <Button className="w-full" variant="outline">
+                    Gestionar
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
+                  <CreditCard className="w-6 h-6 text-pink-600" />
+                </div>
+                <CardTitle>Planes</CardTitle>
+                <CardDescription>
+                  Administra los planes y membresías disponibles
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href="/plans">
                   <Button className="w-full" variant="outline">
                     Gestionar
                   </Button>
