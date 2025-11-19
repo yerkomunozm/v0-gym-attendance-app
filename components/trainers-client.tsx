@@ -7,17 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trainer } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, Trash2, Download, ArrowLeft, Search } from 'lucide-react';
+import { Plus, Trash2, Download, ArrowLeft, Search, Building2, Pencil } from 'lucide-react';
 import { QRCodeSVG } from "qrcode.react";
 import Link from "next/link";
+import { useBranch } from "@/lib/contexts/branch-context";
 
 interface TrainersClientProps {
   initialTrainers: Trainer[];
 }
 
 export function TrainersClient({ initialTrainers }: TrainersClientProps) {
+  const { selectedBranch } = useBranch();
   const [trainers, setTrainers] = useState<Trainer[]>(initialTrainers);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingTrainer, setEditingTrainer] = useState<Trainer | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [newTrainer, setNewTrainer] = useState({
     name: "",
@@ -28,49 +31,98 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
 
   const supabase = createClient();
 
-  const filteredTrainers = trainers.filter((trainer) =>
-    trainer.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTrainers = trainers.filter((trainer) => {
+    const matchesSearch = trainer.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesBranch = !selectedBranch || trainer.branch_id === selectedBranch.id;
+    return matchesSearch && matchesBranch;
+  });
 
   const handleAddTrainer = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const { data, error } = await supabase
-      .from("trainers")
-      .insert([
-        {
-          ...newTrainer,
-          qr_code: "temp",
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error adding trainer:", error);
-      alert("Error al agregar entrenador");
+    if (!selectedBranch) {
+      alert('Debes seleccionar una sede primero');
       return;
     }
 
-    if (data) {
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      const qrUrl = `${baseUrl}/scan/register?trainerId=${data.id}&trainerName=${encodeURIComponent(data.name)}`;
-      
-      const { data: updatedData, error: updateError } = await supabase
+    if (editingTrainer) {
+      // Update existing trainer
+      const { data, error } = await supabase
         .from("trainers")
-        .update({ qr_code: qrUrl })
-        .eq("id", data.id)
+        .update(newTrainer)
+        .eq("id", editingTrainer.id)
         .select()
         .single();
 
-      if (updateError) {
-        console.error("Error updating QR code:", updateError);
+      if (error) {
+        console.error("Error updating trainer:", error);
+        alert("Error al actualizar entrenador");
+        return;
       }
 
-      setTrainers([...trainers, updatedData || data]);
-      setNewTrainer({ name: "", email: "", phone: "", specialty: "" });
-      setIsAdding(false);
+      if (data) {
+        setTrainers(trainers.map(t => t.id === data.id ? data : t));
+        setNewTrainer({ name: "", email: "", phone: "", specialty: "" });
+        setEditingTrainer(null);
+        setIsAdding(false);
+      }
+    } else {
+      // Create new trainer
+      const { data, error } = await supabase
+        .from("trainers")
+        .insert([
+          {
+            ...newTrainer,
+            qr_code: "temp",
+            branch_id: selectedBranch.id
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error adding trainer:", error);
+        alert("Error al agregar entrenador");
+        return;
+      }
+
+      if (data) {
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        const qrUrl = `${baseUrl}/scan/register?trainerId=${data.id}&trainerName=${encodeURIComponent(data.name)}`;
+        
+        const { data: updatedData, error: updateError } = await supabase
+          .from("trainers")
+          .update({ qr_code: qrUrl })
+          .eq("id", data.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error("Error updating QR code:", updateError);
+        }
+
+        setTrainers([...trainers, updatedData || data]);
+        setNewTrainer({ name: "", email: "", phone: "", specialty: "" });
+        setIsAdding(false);
+      }
     }
+  };
+
+  const handleEditTrainer = (trainer: Trainer) => {
+    setEditingTrainer(trainer);
+    setNewTrainer({
+      name: trainer.name,
+      email: trainer.email || "",
+      phone: trainer.phone || "",
+      specialty: trainer.specialty || ""
+    });
+    setIsAdding(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTrainer(null);
+    setNewTrainer({ name: "", email: "", phone: "", specialty: "" });
+    setIsAdding(false);
   };
 
   const handleDeleteTrainer = async (id: string) => {
@@ -117,24 +169,56 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="mb-2">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Volver
-                </Button>
-              </Link>
+              <div className="flex items-center gap-4 mb-2">
+                <Link href="/">
+                  <Button variant="ghost" size="sm">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Volver
+                  </Button>
+                </Link>
+                {selectedBranch ? (
+                  <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                    <Building2 className="w-3 h-3" />
+                    {selectedBranch.name}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                    <Building2 className="w-3 h-3" />
+                    Todas las sedes
+                  </div>
+                )}
+              </div>
               <h1 className="text-4xl font-bold text-slate-900">Gestión de Entrenadores</h1>
             </div>
-            <Button onClick={() => setIsAdding(true)}>
+            <Button onClick={() => setIsAdding(true)} disabled={!selectedBranch}>
               <Plus className="w-4 h-4 mr-2" />
               Agregar Entrenador
             </Button>
           </div>
 
-          {isAdding && (
+          {!selectedBranch && isAdding && (
+            <Card className="mb-8 bg-orange-50 border-orange-200">
+              <CardContent className="flex items-center justify-between p-6">
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-6 h-6 text-orange-600" />
+                  <div>
+                    <h3 className="font-semibold text-orange-900">Sede no seleccionada</h3>
+                    <p className="text-orange-700">Debes seleccionar una sede para agregar entrenadores</p>
+                  </div>
+                </div>
+                <Link href="/branches">
+                  <Button variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-100">
+                    Seleccionar Sede
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
+          {isAdding && selectedBranch && (
             <Card className="mb-8">
               <CardHeader>
-                <CardTitle>Nuevo Entrenador</CardTitle>
+                <CardTitle>{editingTrainer ? 'Editar Entrenador' : 'Nuevo Entrenador'}</CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAddTrainer} className="space-y-4">
@@ -183,11 +267,13 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button type="submit">Guardar</Button>
+                    <Button type="submit">
+                      {editingTrainer ? 'Actualizar' : 'Guardar'}
+                    </Button>
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setIsAdding(false)}
+                      onClick={handleCancelEdit}
                     >
                       Cancelar
                     </Button>
@@ -219,14 +305,24 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
               <Card key={trainer.id} className="relative">
                 <CardHeader>
                   <CardTitle className="text-lg">{trainer.name}</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-4 right-4 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleDeleteTrainer(trainer.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => handleEditTrainer(trainer)}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleDeleteTrainer(trainer.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 mb-4">
@@ -244,6 +340,12 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
                       <p className="text-sm text-slate-600">
                         <span className="font-medium">Especialidad:</span>{" "}
                         {trainer.specialty}
+                      </p>
+                    )}
+                    {trainer.branches && (
+                      <p className="text-sm text-blue-600 flex items-center gap-1 mt-2">
+                        <Building2 className="w-3 h-3" />
+                        <span className="font-medium">Sede:</span> {trainer.branches.name}
                       </p>
                     )}
                   </div>

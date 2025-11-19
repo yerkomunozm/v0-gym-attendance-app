@@ -9,15 +9,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Mail, Phone, Calendar, Trash2, Edit, ArrowLeft } from 'lucide-react';
+import { UserPlus, Mail, Phone, Calendar, Trash2, Edit, ArrowLeft, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useBranch } from '@/lib/contexts/branch-context';
 
 interface StudentsClientProps {
   initialStudents: Student[];
 }
 
 export default function StudentsClient({ initialStudents }: StudentsClientProps) {
+  const { selectedBranch } = useBranch();
   const [students, setStudents] = useState<Student[]>(initialStudents);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -35,6 +37,11 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!selectedBranch) {
+      alert('Debes seleccionar una sede primero');
+      return;
+    }
+
     if (!formData.name.trim()) {
       alert('El nombre es obligatorio');
       return;
@@ -49,6 +56,7 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
             email: formData.email || null,
             phone: formData.phone || null,
             membership_status: formData.membership_status,
+            branch_id: selectedBranch.id
           })
           .eq('id', editingId)
           .select()
@@ -66,6 +74,7 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
             email: formData.email || null,
             phone: formData.phone || null,
             membership_status: formData.membership_status,
+            branch_id: selectedBranch.id
           }])
           .select()
           .single();
@@ -120,9 +129,11 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
     setFormData({ name: '', email: '', phone: '', membership_status: 'active' });
   };
 
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStudents = students.filter(student => {
+    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesBranch = !selectedBranch || student.branch_id === selectedBranch.id;
+    return matchesSearch && matchesBranch;
+  });
 
   const getMembershipBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
@@ -146,19 +157,49 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
                     Volver
                   </Button>
                 </Link>
+                {selectedBranch ? (
+                  <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                    <Building2 className="w-3 h-3" />
+                    {selectedBranch.name}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                    <Building2 className="w-3 h-3" />
+                    Todas las sedes
+                  </div>
+                )}
               </div>
               <h1 className="text-4xl font-bold text-slate-900">Gestión de Alumnos</h1>
               <p className="text-slate-600 mt-2">Administra la información de los alumnos registrados</p>
             </div>
             {!isAdding && (
-              <Button onClick={() => setIsAdding(true)} size="lg">
+              <Button onClick={() => setIsAdding(true)} size="lg" disabled={!selectedBranch}>
                 <UserPlus className="w-5 h-5 mr-2" />
                 Agregar Alumno
               </Button>
             )}
           </div>
 
-          {isAdding && (
+          {!selectedBranch && isAdding && (
+            <Card className="mb-8 bg-orange-50 border-orange-200">
+              <CardContent className="flex items-center justify-between p-6">
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-6 h-6 text-orange-600" />
+                  <div>
+                    <h3 className="font-semibold text-orange-900">Sede no seleccionada</h3>
+                    <p className="text-orange-700">Debes seleccionar una sede para agregar alumnos</p>
+                  </div>
+                </div>
+                <Link href="/branches">
+                  <Button variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-100">
+                    Seleccionar Sede
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
+          {isAdding && selectedBranch && (
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle>{editingId ? 'Editar Alumno' : 'Nuevo Alumno'}</CardTitle>
@@ -281,6 +322,12 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
                             <Calendar className="w-4 h-4" />
                             Registrado: {new Date(student.registration_date).toLocaleDateString('es-ES')}
                           </div>
+                          {student.branches && (
+                            <div className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full text-xs">
+                              <Building2 className="w-3 h-3" />
+                              {student.branches.name}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex gap-2">

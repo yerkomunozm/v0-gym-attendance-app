@@ -22,16 +22,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useBranch } from "@/lib/contexts/branch-context";
 
 interface HistoryClientProps {
   initialAttendance: Attendance[];
 }
 
 export function HistoryClient({ initialAttendance }: HistoryClientProps) {
+  const { selectedBranch } = useBranch();
   const [attendance] = useState<Attendance[]>(initialAttendance);
   const [dateFilter, setDateFilter] = useState("");
   const [studentFilter, setStudentFilter] = useState("");
   const [trainerFilter, setTrainerFilter] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
 
   const uniqueStudents = useMemo(() => {
     const students = new Set(attendance.map(record => record.student_name).filter(Boolean));
@@ -41,6 +44,11 @@ export function HistoryClient({ initialAttendance }: HistoryClientProps) {
   const uniqueTrainers = useMemo(() => {
     const trainers = new Set(attendance.map(record => record.trainers?.name).filter(Boolean));
     return Array.from(trainers).sort();
+  }, [attendance]);
+
+  const uniqueBranches = useMemo(() => {
+    const branches = new Set(attendance.map(record => record.students?.branches?.name).filter(Boolean));
+    return Array.from(branches).sort();
   }, [attendance]);
 
   const uniqueDates = useMemo(() => {
@@ -59,12 +67,19 @@ export function HistoryClient({ initialAttendance }: HistoryClientProps) {
     const recordDate = new Date(record.check_in_time).toLocaleDateString("es-ES");
     const studentName = record.student_name || "";
     const trainerName = record.trainers?.name || "";
+    const branchName = record.students?.branches?.name || "";
 
-    const matchesDate = !dateFilter || recordDate === dateFilter;
-    const matchesStudent = !studentFilter || studentName === studentFilter;
-    const matchesTrainer = !trainerFilter || trainerName === trainerFilter;
+    // Global branch filter
+    if (selectedBranch && record.students?.branch_id !== selectedBranch.id) {
+      return false;
+    }
 
-    return matchesDate && matchesStudent && matchesTrainer;
+    const matchesDate = !dateFilter || dateFilter === "__all__" || recordDate === dateFilter;
+    const matchesStudent = !studentFilter || studentFilter === "__all__" || studentName === studentFilter;
+    const matchesTrainer = !trainerFilter || trainerFilter === "__all__" || trainerName === trainerFilter;
+    const matchesBranch = !branchFilter || branchFilter === "__all__" || branchName === branchFilter;
+
+    return matchesDate && matchesStudent && matchesTrainer && matchesBranch;
   });
 
   const formatDateTime = (dateString: string) => {
@@ -82,9 +97,10 @@ export function HistoryClient({ initialAttendance }: HistoryClientProps) {
     setDateFilter("");
     setStudentFilter("");
     setTrainerFilter("");
+    setBranchFilter("");
   };
 
-  const hasActiveFilters = dateFilter || studentFilter || trainerFilter;
+  const hasActiveFilters = dateFilter || studentFilter || trainerFilter || branchFilter;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -103,7 +119,7 @@ export function HistoryClient({ initialAttendance }: HistoryClientProps) {
             </h1>
 
             <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-2 block">
                     Filtrar por Fecha
@@ -122,6 +138,27 @@ export function HistoryClient({ initialAttendance }: HistoryClientProps) {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {!selectedBranch && (
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 mb-2 block">
+                      Filtrar por Sede
+                    </label>
+                    <Select value={branchFilter} onValueChange={setBranchFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Todas las sedes" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">Todas las sedes</SelectItem>
+                        {uniqueBranches.map((branch) => (
+                          <SelectItem key={branch as string} value={branch as string}>
+                            {branch as string}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-2 block">
@@ -202,6 +239,7 @@ export function HistoryClient({ initialAttendance }: HistoryClientProps) {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Fecha</TableHead>
+                        {!selectedBranch && <TableHead>Sede</TableHead>}
                         <TableHead>Alumno</TableHead>
                         <TableHead>Entrenador</TableHead>
                         <TableHead>Notas</TableHead>
@@ -213,6 +251,11 @@ export function HistoryClient({ initialAttendance }: HistoryClientProps) {
                           <TableCell className="font-medium">
                             {formatDateTime(record.check_in_time)}
                           </TableCell>
+                          {!selectedBranch && (
+                            <TableCell>
+                              {record.students?.branches?.name || "-"}
+                            </TableCell>
+                          )}
                           <TableCell>{record.student_name}</TableCell>
                           <TableCell>
                             {record.trainers?.name || "Entrenador desconocido"}

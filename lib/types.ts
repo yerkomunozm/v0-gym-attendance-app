@@ -7,6 +7,10 @@ export interface Trainer {
   qr_code: string;
   active: boolean;
   created_at: string;
+  branch_id?: string; // Added branch_id for multi-branch support
+  branches?: {
+    name: string;
+  } | null; // Added branches relation for display
 }
 
 export interface Attendance {
@@ -17,6 +21,7 @@ export interface Attendance {
   check_in_time: string;
   notes: string | null;
   created_at: string;
+  branch_id?: string; // Added branch_id for multi-branch support
   trainers?: Trainer;
   students?: Student;
 }
@@ -29,4 +34,8 @@ export interface Student {
   membership_status: string;
   registration_date: string;
   created_at: string;
+  branch_id?: string; // Added branch_id for multi-branch support
+  branches?: {
+    name: string;
+  } | null; // Added branches relation for display
 }
