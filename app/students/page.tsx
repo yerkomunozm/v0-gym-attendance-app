@@ -6,7 +6,7 @@ export default async function StudentsPage() {
   
   const { data: students, error } = await supabase
     .from('students')
-    .select('*')
+    .select('*, branches(name)')
     .order('name', { ascending: true });
 
   if (error) {
