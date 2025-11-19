@@ -3,7 +3,6 @@ import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { Geist_Mono, Exo as V0_Font_Exo, Geist_Mono as V0_Font_Geist_Mono } from 'next/font/google'
-import { BranchProvider } from '@/lib/contexts/branch-context'
 
 // Initialize fonts
 const _exo = V0_Font_Exo({ subsets: ['latin'], weight: ["100","200","300","400","500","600","700","800","900"] })
@@ -40,9 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <BranchProvider>
-          {children}
-        </BranchProvider>
+        {children}
         <Analytics />
       </body>
     </html>

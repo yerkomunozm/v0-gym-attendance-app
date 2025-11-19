@@ -6,7 +6,7 @@ export default async function TrainersPage() {
 
   const { data: trainers, error } = await supabase
     .from("trainers")
-    .select("*, branches(name)")
+    .select("*")
     .order("name");
 
   if (error) {

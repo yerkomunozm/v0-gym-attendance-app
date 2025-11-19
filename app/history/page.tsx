@@ -14,15 +14,6 @@ export default async function HistoryPage() {
         name,
         email,
         specialty
-      ),
-      students (
-        id,
-        name,
-        branch_id,
-        branches (
-          id,
-          name
-        )
       )
     `
     )
