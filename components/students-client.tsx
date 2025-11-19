@@ -20,9 +20,7 @@ interface StudentsClientProps {
 
 export default function StudentsClient({ initialStudents }: StudentsClientProps) {
   const { selectedBranch } = useBranch();
-  const [students, setStudents] = useState<Student[]>(
-    initialStudents.filter(s => !s.branch_id || (selectedBranch && s.branch_id === selectedBranch.id))
-  );
+  const [students, setStudents] = useState<Student[]>(initialStudents);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -131,9 +129,11 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
     setFormData({ name: '', email: '', phone: '', membership_status: 'active' });
   };
 
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStudents = students.filter(student => {
+    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesBranch = !selectedBranch || student.branch_id === selectedBranch.id;
+    return matchesSearch && matchesBranch;
+  });
 
   const getMembershipBadge = (status: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
@@ -157,10 +157,15 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
                     Volver
                   </Button>
                 </Link>
-                {selectedBranch && (
+                {selectedBranch ? (
                   <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                     <Building2 className="w-3 h-3" />
                     {selectedBranch.name}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                    <Building2 className="w-3 h-3" />
+                    Todas las sedes
                   </div>
                 )}
               </div>
@@ -175,14 +180,14 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
             )}
           </div>
 
-          {!selectedBranch && (
+          {!selectedBranch && isAdding && (
             <Card className="mb-8 bg-orange-50 border-orange-200">
               <CardContent className="flex items-center justify-between p-6">
                 <div className="flex items-center gap-3">
                   <Building2 className="w-6 h-6 text-orange-600" />
                   <div>
                     <h3 className="font-semibold text-orange-900">Sede no seleccionada</h3>
-                    <p className="text-orange-700">Debes seleccionar una sede para gestionar alumnos</p>
+                    <p className="text-orange-700">Debes seleccionar una sede para agregar alumnos</p>
                   </div>
                 </div>
                 <Link href="/branches">
@@ -194,7 +199,7 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
             </Card>
           )}
 
-          {isAdding && (
+          {isAdding && selectedBranch && (
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle>{editingId ? 'Editar Alumno' : 'Nuevo Alumno'}</CardTitle>
@@ -317,6 +322,12 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
                             <Calendar className="w-4 h-4" />
                             Registrado: {new Date(student.registration_date).toLocaleDateString('es-ES')}
                           </div>
+                          {student.branches && (
+                            <div className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full text-xs">
+                              <Building2 className="w-3 h-3" />
+                              {student.branches.name}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex gap-2">

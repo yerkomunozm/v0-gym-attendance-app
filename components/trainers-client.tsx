@@ -18,9 +18,7 @@ interface TrainersClientProps {
 
 export function TrainersClient({ initialTrainers }: TrainersClientProps) {
   const { selectedBranch } = useBranch();
-  const [trainers, setTrainers] = useState<Trainer[]>(
-    initialTrainers.filter(t => !t.branch_id || (selectedBranch && t.branch_id === selectedBranch.id))
-  );
+  const [trainers, setTrainers] = useState<Trainer[]>(initialTrainers);
   const [isAdding, setIsAdding] = useState(false);
   const [editingTrainer, setEditingTrainer] = useState<Trainer | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,9 +31,11 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
 
   const supabase = createClient();
 
-  const filteredTrainers = trainers.filter((trainer) =>
-    trainer.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTrainers = trainers.filter((trainer) => {
+    const matchesSearch = trainer.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesBranch = !selectedBranch || trainer.branch_id === selectedBranch.id;
+    return matchesSearch && matchesBranch;
+  });
 
   const handleAddTrainer = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,10 +176,15 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
                     Volver
                   </Button>
                 </Link>
-                {selectedBranch && (
+                {selectedBranch ? (
                   <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                     <Building2 className="w-3 h-3" />
                     {selectedBranch.name}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                    <Building2 className="w-3 h-3" />
+                    Todas las sedes
                   </div>
                 )}
               </div>
@@ -191,14 +196,14 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
             </Button>
           </div>
 
-          {!selectedBranch && (
+          {!selectedBranch && isAdding && (
             <Card className="mb-8 bg-orange-50 border-orange-200">
               <CardContent className="flex items-center justify-between p-6">
                 <div className="flex items-center gap-3">
                   <Building2 className="w-6 h-6 text-orange-600" />
                   <div>
                     <h3 className="font-semibold text-orange-900">Sede no seleccionada</h3>
-                    <p className="text-orange-700">Debes seleccionar una sede para gestionar entrenadores</p>
+                    <p className="text-orange-700">Debes seleccionar una sede para agregar entrenadores</p>
                   </div>
                 </div>
                 <Link href="/branches">
@@ -210,7 +215,7 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
             </Card>
           )}
 
-          {isAdding && (
+          {isAdding && selectedBranch && (
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle>{editingTrainer ? 'Editar Entrenador' : 'Nuevo Entrenador'}</CardTitle>
@@ -335,6 +340,12 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
                       <p className="text-sm text-slate-600">
                         <span className="font-medium">Especialidad:</span>{" "}
                         {trainer.specialty}
+                      </p>
+                    )}
+                    {trainer.branches && (
+                      <p className="text-sm text-blue-600 flex items-center gap-1 mt-2">
+                        <Building2 className="w-3 h-3" />
+                        <span className="font-medium">Sede:</span> {trainer.branches.name}
                       </p>
                     )}
                   </div>
