@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Building2, MapPin, Phone, Check } from 'lucide-react';
+import { Building2, MapPin, Phone, Check, Pencil } from 'lucide-react';
 import { useBranch } from '@/lib/contexts/branch-context';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -24,6 +24,7 @@ export default function BranchesPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [formData, setFormData] = useState({ name: '', address: '', phone: '' });
   const { selectedBranch, setSelectedBranch } = useBranch();
   const supabase = createBrowserClient();
@@ -51,20 +52,62 @@ export default function BranchesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const { data, error } = await supabase
-      .from('branches')
-      .insert([formData])
-      .select()
-      .single();
+    if (editingBranch) {
+      // Update existing branch
+      const { data, error } = await supabase
+        .from('branches')
+        .update(formData)
+        .eq('id', editingBranch.id)
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Error creating branch:', error);
-      alert('Error al crear la sede');
+      if (error) {
+        console.error('Error updating branch:', error);
+        alert('Error al actualizar la sede');
+      } else {
+        setBranches(branches.map(b => b.id === data.id ? data : b));
+        // Update selected branch if it was the one being edited
+        if (selectedBranch?.id === data.id) {
+          setSelectedBranch(data);
+        }
+        setFormData({ name: '', address: '', phone: '' });
+        setEditingBranch(null);
+        setShowForm(false);
+      }
     } else {
-      setBranches([...branches, data]);
-      setFormData({ name: '', address: '', phone: '' });
-      setShowForm(false);
+      // Create new branch
+      const { data, error } = await supabase
+        .from('branches')
+        .insert([formData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating branch:', error);
+        alert('Error al crear la sede');
+      } else {
+        setBranches([...branches, data]);
+        setFormData({ name: '', address: '', phone: '' });
+        setShowForm(false);
+      }
     }
+  };
+
+  const handleEditBranch = (branch: Branch, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card selection
+    setEditingBranch(branch);
+    setFormData({
+      name: branch.name,
+      address: branch.address || '',
+      phone: branch.phone || ''
+    });
+    setShowForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingBranch(null);
+    setFormData({ name: '', address: '', phone: '' });
+    setShowForm(false);
   };
 
   const handleSelectBranch = (branch: Branch) => {
@@ -124,8 +167,10 @@ export default function BranchesPage() {
           {showForm && (
             <Card className="mb-6">
               <CardHeader>
-                <CardTitle>Nueva Sede</CardTitle>
-                <CardDescription>Crea una nueva sede para tu gimnasio</CardDescription>
+                <CardTitle>{editingBranch ? 'Editar Sede' : 'Nueva Sede'}</CardTitle>
+                <CardDescription>
+                  {editingBranch ? 'Actualiza la información de la sede' : 'Crea una nueva sede para tu gimnasio'}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -157,7 +202,14 @@ export default function BranchesPage() {
                       placeholder="Ej: +1234567890"
                     />
                   </div>
-                  <Button type="submit" className="w-full">Crear Sede</Button>
+                  <div className="flex gap-2">
+                    <Button type="submit" className="flex-1">
+                      {editingBranch ? 'Actualizar Sede' : 'Crear Sede'}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                      Cancelar
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
@@ -179,11 +231,21 @@ export default function BranchesPage() {
                     <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-3">
                       <Building2 className="w-6 h-6 text-orange-600" />
                     </div>
-                    {selectedBranch?.id === branch.id && (
-                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handleEditBranch(branch, e)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      {selectedBranch?.id === branch.id && (
+                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <CardTitle className="text-xl">{branch.name}</CardTitle>
                 </CardHeader>
