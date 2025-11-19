@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Student } from '@/lib/types';
+import { Student, Plan } from '@/lib/types';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,16 +9,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Mail, Phone, Calendar, Trash2, Edit, ArrowLeft, Building2 } from 'lucide-react';
+import { UserPlus, Mail, Phone, Calendar, Trash2, Edit, ArrowLeft, Building2, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useBranch } from '@/lib/contexts/branch-context';
 
 interface StudentsClientProps {
   initialStudents: Student[];
+  availablePlans: Plan[];
 }
 
-export default function StudentsClient({ initialStudents }: StudentsClientProps) {
+export default function StudentsClient({ initialStudents, availablePlans }: StudentsClientProps) {
   const { selectedBranch } = useBranch();
   const [students, setStudents] = useState<Student[]>(initialStudents);
   const [isAdding, setIsAdding] = useState(false);
@@ -28,6 +29,7 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
     email: '',
     phone: '',
     membership_status: 'active',
+    plan_id: '',
   });
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
@@ -48,18 +50,21 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
     }
 
     try {
+      const studentData = {
+        name: formData.name,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        membership_status: formData.membership_status,
+        branch_id: selectedBranch.id,
+        plan_id: formData.plan_id || null,
+      };
+
       if (editingId) {
         const { data, error } = await supabase
           .from('students')
-          .update({
-            name: formData.name,
-            email: formData.email || null,
-            phone: formData.phone || null,
-            membership_status: formData.membership_status,
-            branch_id: selectedBranch.id
-          })
+          .update(studentData)
           .eq('id', editingId)
-          .select()
+          .select('*, branches(name), plans(id, name)')
           .single();
 
         if (error) throw error;
@@ -69,14 +74,8 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
       } else {
         const { data, error } = await supabase
           .from('students')
-          .insert([{
-            name: formData.name,
-            email: formData.email || null,
-            phone: formData.phone || null,
-            membership_status: formData.membership_status,
-            branch_id: selectedBranch.id
-          }])
-          .select()
+          .insert([studentData])
+          .select('*, branches(name), plans(id, name)')
           .single();
 
         if (error) throw error;
@@ -85,7 +84,7 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
         setIsAdding(false);
       }
 
-      setFormData({ name: '', email: '', phone: '', membership_status: 'active' });
+      setFormData({ name: '', email: '', phone: '', membership_status: 'active', plan_id: '' });
       router.refresh();
     } catch (error) {
       console.error('Error saving student:', error);
@@ -99,6 +98,7 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
       email: student.email || '',
       phone: student.phone || '',
       membership_status: student.membership_status,
+      plan_id: student.plan_id || '',
     });
     setEditingId(student.id);
     setIsAdding(true);
@@ -126,7 +126,7 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
   const handleCancel = () => {
     setIsAdding(false);
     setEditingId(null);
-    setFormData({ name: '', email: '', phone: '', membership_status: 'active' });
+    setFormData({ name: '', email: '', phone: '', membership_status: 'active', plan_id: '' });
   };
 
   const filteredStudents = students.filter(student => {
@@ -258,6 +258,25 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="plan">Plan</Label>
+                      <Select
+                        value={formData.plan_id}
+                        onValueChange={(value) => setFormData({ ...formData, plan_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar plan..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availablePlans.map((plan) => (
+                            <SelectItem key={plan.id} value={plan.id}>
+                              {plan.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="flex gap-2 justify-end">
@@ -326,6 +345,12 @@ export default function StudentsClient({ initialStudents }: StudentsClientProps)
                             <div className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full text-xs">
                               <Building2 className="w-3 h-3" />
                               {student.branches.name}
+                            </div>
+                          )}
+                          {student.plans && (
+                            <div className="flex items-center gap-1 text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full text-xs">
+                              <CreditCard className="w-3 h-3" />
+                              {student.plans.name}
                             </div>
                           )}
                         </div>
