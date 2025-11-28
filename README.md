@@ -1,30 +1,75 @@
-# Gym attendance app
+# Gym Attendance App
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+A modern web application for tracking gym attendance, built with Next.js and Supabase.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/yerkomunozmallanes-8999s-projects/v0-gym-attendance-app)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/lQDsi9dAt9d)
+## Features
 
-## Overview
+- **Attendance Tracking**: Efficiently track member check-ins and check-outs.
+- **QR Code Generation**: Generate QR codes for easy member identification and check-in.
+- **Dashboard & Analytics**: Visualize attendance data with interactive charts using Recharts.
+- **Modern UI**: Clean and responsive user interface built with Tailwind CSS and Radix UI primitives.
+- **Form Handling**: Robust form validation using React Hook Form and Zod.
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+## Tech Stack
+
+- **Framework**: [Next.js](https://nextjs.org/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **UI Components**: [Radix UI](https://www.radix-ui.com/)
+- **Database & Auth**: [Supabase](https://supabase.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Charts**: [Recharts](https://recharts.org/)
+- **Forms**: [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher recommended)
+- npm or pnpm
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd v0-gym-attendance-app
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   pnpm install
+   ```
+
+3. Set up environment variables:
+   Copy the example environment file and configure your Supabase credentials.
+   ```bash
+   cp .env.local.example .env.local
+   ```
+
+4. Run the development server:
+   ```bash
+   npm run dev
+   # or
+   pnpm dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Project Structure
+
+- `/app`: Next.js app router pages and layouts.
+- `/components`: Reusable UI components.
+- `/lib`: Utility functions and shared logic.
+- `/public`: Static assets.
+- `/styles`: Global styles.
 
 ## Deployment
 
-Your project is live at:
+This project is optimized for deployment on [Vercel](https://vercel.com/).
 
-**[https://vercel.com/yerkomunozmallanes-8999s-projects/v0-gym-attendance-app](https://vercel.com/yerkomunozmallanes-8999s-projects/v0-gym-attendance-app)**
+---
 
-## Build your app
-
-Continue building your app on:
-
-**[https://v0.app/chat/lQDsi9dAt9d](https://v0.app/chat/lQDsi9dAt9d)**
-
-## How It Works
-
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+*Built with [v0](https://v0.dev)*

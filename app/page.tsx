@@ -53,7 +53,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <Link href="/branches">
-                  <Button className="w-full" variant="outline">
+                  <Button className="w-full" variant="default">
                     Gestionar
                   </Button>
                 </Link>
@@ -72,7 +72,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <Link href="/plans">
-                  <Button className="w-full" variant="outline">
+                  <Button className="w-full" variant="default">
                     Gestionar
                   </Button>
                 </Link>
@@ -91,14 +91,14 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <Link href="/trainers">
-                  <Button className="w-full" disabled={!selectedBranch}>
+                  <Button className="w-full" variant="default" disabled={!selectedBranch}>
                     Gestionar
                   </Button>
                 </Link>
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow">
+             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
                   <GraduationCap className="w-6 h-6 text-orange-600" />
@@ -110,12 +110,12 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <Link href="/students">
-                  <Button className="w-full" disabled={!selectedBranch}>
+                  <Button className="w-full" variant="default" disabled={!selectedBranch}>
                     Gestionar
                   </Button>
                 </Link>
               </CardContent>
-            </Card>
+            </Card> 
 
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
@@ -143,26 +143,17 @@ export default function Home() {
                 </div>
                 <CardTitle>Historial</CardTitle>
                 <CardDescription>
-                  Consulta el historial de asistencias registradas
+                  Consulta el historial de asistencias registradas.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Link href="/history">
-                  <Button className="w-full" variant="outline" disabled={!selectedBranch}>
+                  <Button className="w-full" variant="default" disabled={!selectedBranch}>
                     Ver
                   </Button>
                 </Link>
               </CardContent>
             </Card>
-          </div>
-          
-          <div className="mt-8 text-center">
-            <Link href="/branches">
-              <Button variant="ghost" className="text-slate-500 hover:text-slate-700">
-                <Building2 className="w-4 h-4 mr-2" />
-                Gestionar Sedes
-              </Button>
-            </Link>
           </div>
         </div>
       </div>

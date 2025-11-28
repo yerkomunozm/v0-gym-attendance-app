@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Attendance } from "@/lib/types";
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X, Building2 } from 'lucide-react';
 import Link from "next/link";
 import {
   Table,
@@ -47,7 +47,7 @@ export function HistoryClient({ initialAttendance }: HistoryClientProps) {
   }, [attendance]);
 
   const uniqueBranches = useMemo(() => {
-    const branches = new Set(attendance.map(record => record.students?.branches?.name).filter(Boolean));
+    const branches = new Set(attendance.map(record => record.students?.branches?.name).filter((name): name is string => !!name));
     return Array.from(branches).sort();
   }, [attendance]);
 
@@ -106,12 +106,27 @@ export function HistoryClient({ initialAttendance }: HistoryClientProps) {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Volver
-            </Button>
-          </Link>
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <Link href="/">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Volver
+                </Button>
+              </Link>
+              {selectedBranch ? (
+                <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                  <Building2 className="w-3 h-3" />
+                  {selectedBranch.name}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                  <Building2 className="w-3 h-3" />
+                  Sin sucursal seleccionada
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-slate-900 mb-6">

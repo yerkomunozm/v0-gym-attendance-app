@@ -21,16 +21,16 @@ import type { Student } from "@/lib/types";
 export function SelectStudentClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+
   const trainerId = searchParams.get("trainerId");
   const trainerName = searchParams.get("trainerName");
-  
+
   console.log("[v0] URL Search Params:", {
     trainerId,
     trainerName,
     allParams: Object.fromEntries(searchParams.entries())
   });
-  
+
   const [studentId, setStudentId] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
@@ -43,7 +43,7 @@ export function SelectStudentClient() {
 
   useEffect(() => {
     console.log("[v0] useEffect triggered - trainerId:", trainerId, "trainerName:", trainerName);
-    
+
     if (!trainerId || !trainerName) {
       console.log("[v0] Missing parameters, redirecting to home");
       router.push("/");
@@ -53,12 +53,32 @@ export function SelectStudentClient() {
     async function loadStudents() {
       console.log("[v0] Loading students...");
       const supabase = createClient();
-      
-      const { data, error } = await supabase
+
+      // First get the trainer's branch
+      const { data: trainerData, error: trainerError } = await supabase
+        .from("trainers")
+        .select("branch_id")
+        .eq("id", trainerId)
+        .single();
+
+      if (trainerError) {
+        console.error("[v0] Error loading trainer details:", trainerError);
+        setIsLoadingStudents(false);
+        return;
+      }
+
+      let query = supabase
         .from("students")
         .select("*")
         .eq("membership_status", "active")
         .order("name");
+
+      // Filter by branch if trainer has one
+      if (trainerData?.branch_id) {
+        query = query.eq("branch_id", trainerData.branch_id);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error("[v0] Error loading students:", error);
@@ -107,11 +127,11 @@ export function SelectStudentClient() {
         type: "success",
         message: `Asistencia de ${selectedStudent?.name} registrada con ${trainerName}`,
       });
-      
+
       // Clear form after success
       setStudentId("");
       setNotes("");
-      
+
       // Redirect to success page after 1.5 seconds
       setTimeout(() => {
         router.push("/scan/success");
@@ -197,8 +217,8 @@ export function SelectStudentClient() {
                           isLoadingStudents
                             ? "Cargando alumnos..."
                             : students.length === 0
-                            ? "No hay alumnos registrados"
-                            : "Selecciona tu nombre"
+                              ? "No hay alumnos registrados"
+                              : "Selecciona tu nombre"
                         }
                       />
                     </SelectTrigger>
@@ -219,8 +239,8 @@ export function SelectStudentClient() {
                     {isLoadingStudents
                       ? "Cargando alumnos..."
                       : students.length === 0
-                      ? "No hay alumnos registrados. Contacta al administrador."
-                      : `${students.length} alumno(s) disponible(s)`}
+                        ? "No hay alumnos registrados. Contacta al administrador."
+                        : `${students.length} alumno(s) disponible(s)`}
                   </p>
                 </div>
 
@@ -237,11 +257,10 @@ export function SelectStudentClient() {
 
                 {status.type && (
                   <div
-                    className={`flex items-center gap-2 p-4 rounded-lg ${
-                      status.type === "success"
+                    className={`flex items-center gap-2 p-4 rounded-lg ${status.type === "success"
                         ? "bg-green-50 text-green-800"
                         : "bg-red-50 text-red-800"
-                    }`}
+                      }`}
                   >
                     {status.type === "success" ? (
                       <CheckCircle className="w-5 h-5" />

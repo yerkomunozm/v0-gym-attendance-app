@@ -89,7 +89,7 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
       if (data) {
         // Generate a short code for the QR
         const shortCode = `TR-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-        
+
         const { data: updatedData, error: updateError } = await supabase
           .from("trainers")
           .update({ qr_code: shortCode })
@@ -184,7 +184,7 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
                 ) : (
                   <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
                     <Building2 className="w-3 h-3" />
-                    Todas las sedes
+                    Sin sucursal seleccionada
                   </div>
                 )}
               </div>
@@ -354,8 +354,8 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
                       <QRCodeSVG
                         id={`qr-${trainer.id}`}
                         value={
-                          trainer.qr_code.startsWith('http') 
-                            ? trainer.qr_code 
+                          trainer.qr_code.startsWith('http')
+                            ? trainer.qr_code
                             : `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/scan/register?trainerId=${trainer.id}&trainerName=${encodeURIComponent(trainer.name)}`
                         }
                         size={150}

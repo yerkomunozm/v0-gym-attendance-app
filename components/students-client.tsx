@@ -38,7 +38,7 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedBranch) {
       alert('Debes seleccionar una sede primero');
       return;
@@ -165,7 +165,7 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
                 ) : (
                   <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
                     <Building2 className="w-3 h-3" />
-                    Todas las sedes
+                    Sin sucursal seleccionada
                   </div>
                 )}
               </div>
