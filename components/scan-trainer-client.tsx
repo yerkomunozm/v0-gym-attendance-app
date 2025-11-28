@@ -23,21 +23,51 @@ export function ScanTrainerClient() {
 
     try {
       const supabase = createClient();
-      
-      const { data: trainer, error: trainerError } = await supabase
-        .from("trainers")
-        .select("*")
-        .eq("qr_code", qrCode)
-        .single();
+      let trainerData;
 
-      if (trainerError || !trainer) {
+      // Check if input is a URL
+      if (qrCode.startsWith('http')) {
+        try {
+          const url = new URL(qrCode);
+          const trainerId = url.searchParams.get('trainerId');
+
+          if (trainerId) {
+            const { data, error } = await supabase
+              .from("trainers")
+              .select("*")
+              .eq("id", trainerId)
+              .single();
+
+            if (!error && data) {
+              trainerData = data;
+            }
+          }
+        } catch (e) {
+          console.error("Invalid URL:", e);
+        }
+      }
+
+      // If not found by URL or not a URL, try finding by qr_code field (for short codes or legacy full URLs)
+      if (!trainerData) {
+        const { data, error } = await supabase
+          .from("trainers")
+          .select("*")
+          .eq("qr_code", qrCode)
+          .single();
+
+        if (!error && data) {
+          trainerData = data;
+        }
+      }
+
+      if (!trainerData) {
         setError("Código QR no válido. Entrenador no encontrado.");
         setIsValidating(false);
         return;
       }
 
       // Redirect to student selection page with trainer info
-      router.push(`/scan/register?trainerId=${trainer.id}&trainerName=${encodeURIComponent(trainer.name)}&qrCode=${encodeURIComponent(qrCode)}`);
+      router.push(`/scan/register?trainerId=${trainerData.id}&trainerName=${encodeURIComponent(trainerData.name)}&qrCode=${encodeURIComponent(qrCode)}`);
     } catch (error) {
       console.error("Error:", error);
       setError("Error inesperado al validar el código QR.");
