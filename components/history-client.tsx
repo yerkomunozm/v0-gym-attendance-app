@@ -37,12 +37,12 @@ export function HistoryClient({ initialAttendance }: HistoryClientProps) {
   const [branchFilter, setBranchFilter] = useState("");
 
   const uniqueStudents = useMemo(() => {
-    const students = new Set(attendance.map(record => record.student_name).filter(Boolean));
+    const students = new Set(attendance.map(record => record.student_name).filter((name): name is string => !!name));
     return Array.from(students).sort();
   }, [attendance]);
 
   const uniqueTrainers = useMemo(() => {
-    const trainers = new Set(attendance.map(record => record.trainers?.name).filter(Boolean));
+    const trainers = new Set(attendance.map(record => record.trainers?.name).filter((name): name is string => !!name));
     return Array.from(trainers).sort();
   }, [attendance]);
 

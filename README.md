@@ -33,7 +33,7 @@ A modern web application for tracking gym attendance, built with Next.js and Sup
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd v0-gym-attendance-app
+   cd gym-attendance-app
    ```
 
 2. Install dependencies:
@@ -68,8 +68,6 @@ A modern web application for tracking gym attendance, built with Next.js and Sup
 
 ## Deployment
 
-This project is optimized for deployment on [Vercel](https://vercel.com/).
+This project is deployed on [AWS Amplify](https://aws.amazon.com/amplify/).
 
----
 
-*Built with [v0](https://v0.dev)*
