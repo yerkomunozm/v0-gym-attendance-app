@@ -1,27 +1,63 @@
-import { createServerClient } from '@/lib/supabase/server';
-import StudentsClient from '@/components/students-client';
+import { createClient } from "@/lib/supabase/server";
+import { StudentsClient } from "@/components/students-client";
+import { RoleBasedNav } from "@/components/role-based-nav";
+import { redirect } from "next/navigation";
 
 export default async function StudentsPage() {
-  const supabase = await createServerClient();
-  
-  const { data: students, error: studentsError } = await supabase
-    .from('students')
-    .select('*, branches(name), plans(id, name)')
-    .order('name', { ascending: true });
+  const supabase = await createClient();
 
-  if (studentsError) {
-    console.error('Error fetching students:', studentsError);
+  // Get current user
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    redirect('/login');
   }
 
-  const { data: plans, error: plansError } = await supabase
-    .from('plans')
-    .select('*')
-    .eq('active', true)
-    .order('name', { ascending: true });
+  // Get user profile with role
+  const { data: userProfile } = await supabase
+    .from('users')
+    .select('role, branch_id')
+    .eq('id', session.user.id)
+    .single();
 
-  if (plansError) {
-    console.error('Error fetching plans:', plansError);
+  if (!userProfile) {
+    redirect('/login');
   }
 
-  return <StudentsClient initialStudents={students || []} availablePlans={plans || []} />;
+  // Build query based on role
+  let query = supabase
+    .from("students")
+    .select(`
+      *,
+      branches(name),
+      plans(name, price)
+    `);
+
+  // Filter based on role
+  if (userProfile.role === 'trainer' && userProfile.branch_id) {
+    // Trainers can only see students from their branch
+    query = query.eq('branch_id', userProfile.branch_id);
+  }
+  // Admin sees all students (no filter)
+  // Students shouldn't access this page (middleware will handle)
+
+  const { data: students, error } = await query.order("name");
+
+  if (error) {
+    console.error("Error fetching students:", error);
+  }
+
+  // Fetch plans for the dropdown
+  const { data: plans } = await supabase
+    .from("plans")
+    .select("*")
+    .eq("active", true)
+    .order("name");
+
+  return (
+    <>
+      <RoleBasedNav />
+      <StudentsClient initialStudents={students || []} availablePlans={plans || []} />
+    </>
+  );
 }

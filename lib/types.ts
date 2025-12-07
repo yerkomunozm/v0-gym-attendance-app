@@ -59,3 +59,17 @@ export interface Plan {
   active: boolean;
   created_at: string;
 }
+
+export type UserRole = 'admin' | 'trainer' | 'student';
+
+export interface User {
+  id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  branch_id: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  branches?: Branch | null;
+}

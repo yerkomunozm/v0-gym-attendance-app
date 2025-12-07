@@ -5,12 +5,27 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, QrCode, History, GraduationCap, Building2, CreditCard } from 'lucide-react';
 import { useBranch } from "@/lib/contexts/branch-context";
+import { RoleBasedNav } from "@/components/role-based-nav";
+import { useAuth } from "@/lib/contexts/auth-context";
 
 export default function Home() {
   const { selectedBranch } = useBranch();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <RoleBasedNav />
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
@@ -20,102 +35,114 @@ export default function Home() {
             <p className="text-xl text-slate-600 mb-6">
               Gestiona alumnos y registra asistencias con códigos QR
             </p>
-            
+
             {selectedBranch ? (
               <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full border border-blue-200">
                 <Building2 className="w-4 h-4" />
                 <span className="font-medium">Sede: {selectedBranch.name}</span>
-                <Link href="/branches" className="ml-2 text-sm underline hover:text-blue-800">
-                  Cambiar
-                </Link>
+                {user?.role === 'admin' && (
+                  <Link href="/branches" className="ml-2 text-sm underline hover:text-blue-800">
+                    Cambiar
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-4 py-2 rounded-full border border-orange-200 animate-pulse">
                 <Building2 className="w-4 h-4" />
                 <span className="font-medium">No hay sede seleccionada</span>
-                <Link href="/branches" className="ml-2 text-sm underline hover:text-orange-800">
-                  Seleccionar
-                </Link>
+                {user?.role === 'admin' && (
+                  <Link href="/branches" className="ml-2 text-sm underline hover:text-orange-800">
+                    Seleccionar
+                  </Link>
+                )}
               </div>
             )}
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
-                  <Building2 className="w-6 h-6 text-indigo-600" />
-                </div>
-                <CardTitle>Sedes</CardTitle>
-                <CardDescription>
-                  Administra las sucursales y ubicaciones del gimnasio
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/branches">
-                  <Button className="w-full" variant="default">
-                    Gestionar
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+            {user?.role === 'admin' && (
+              <>
+                <Card className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+                      <Building2 className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <CardTitle>Sedes</CardTitle>
+                    <CardDescription>
+                      Administra las sucursales y ubicaciones del gimnasio
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Link href="/branches">
+                      <Button className="w-full" variant="default">
+                        Gestionar
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
 
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
-                  <CreditCard className="w-6 h-6 text-pink-600" />
-                </div>
-                <CardTitle>Planes</CardTitle>
-                <CardDescription>
-                  Administra los planes y membresías disponibles
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/plans">
-                  <Button className="w-full" variant="default">
-                    Gestionar
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+                <Card className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
+                      <CreditCard className="w-6 h-6 text-pink-600" />
+                    </div>
+                    <CardTitle>Planes</CardTitle>
+                    <CardDescription>
+                      Administra los planes y membresías disponibles
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Link href="/plans">
+                      <Button className="w-full" variant="default">
+                        Gestionar
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </>
+            )}
 
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 text-blue-600" />
-                </div>
-                <CardTitle>Entrenadores</CardTitle>
-                <CardDescription>
-                  Administra la lista de entrenadores y genera códigos QR
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/trainers">
-                  <Button className="w-full" variant="default" disabled={!selectedBranch}>
-                    Gestionar
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+            {(user?.role === 'admin' || user?.role === 'trainer') && (
+              <>
+                <Card className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                      <Users className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <CardTitle>Entrenadores</CardTitle>
+                    <CardDescription>
+                      Administra la lista de entrenadores y genera códigos QR
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Link href="/trainers">
+                      <Button className="w-full" variant="default" disabled={!selectedBranch}>
+                        Gestionar
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
 
-             <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-                  <GraduationCap className="w-6 h-6 text-orange-600" />
-                </div>
-                <CardTitle>Alumnos</CardTitle>
-                <CardDescription>
-                  Gestiona el registro de alumnos del gimnasio
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link href="/students">
-                  <Button className="w-full" variant="default" disabled={!selectedBranch}>
-                    Gestionar
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card> 
+                <Card className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                      <GraduationCap className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <CardTitle>Alumnos</CardTitle>
+                    <CardDescription>
+                      Gestiona el registro de alumnos del gimnasio
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Link href="/students">
+                      <Button className="w-full" variant="default" disabled={!selectedBranch}>
+                        Gestionar
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </>
+            )}
 
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
@@ -124,7 +151,10 @@ export default function Home() {
                 </div>
                 <CardTitle>Registro de Asistencia</CardTitle>
                 <CardDescription>
-                  Los alumnos registran su asistencia escaneando el QR del entrenador
+                  {user?.role === 'student'
+                    ? 'Registra tu asistencia escaneando el QR del entrenador'
+                    : 'Los alumnos registran su asistencia escaneando el QR del entrenador'
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -143,7 +173,10 @@ export default function Home() {
                 </div>
                 <CardTitle>Historial</CardTitle>
                 <CardDescription>
-                  Consulta el historial de asistencias registradas.
+                  {user?.role === 'student'
+                    ? 'Consulta tu historial de asistencias'
+                    : 'Consulta el historial de asistencias registradas'
+                  }
                 </CardDescription>
               </CardHeader>
               <CardContent>

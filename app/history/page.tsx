@@ -1,10 +1,31 @@
 import { createClient } from "@/lib/supabase/server";
 import { HistoryClient } from "@/components/history-client";
+import { RoleBasedNav } from "@/components/role-based-nav";
+import { redirect } from "next/navigation";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
 
-  const { data: attendance, error } = await supabase
+  // Get current user
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    redirect('/login');
+  }
+
+  // Get user profile with role
+  const { data: userProfile } = await supabase
+    .from('users')
+    .select('role, branch_id')
+    .eq('id', session.user.id)
+    .single();
+
+  if (!userProfile) {
+    redirect('/login');
+  }
+
+  // Build query based on role
+  let query = supabase
     .from("attendance")
     .select(
       `
@@ -25,12 +46,44 @@ export default async function HistoryPage() {
         )
       )
     `
-    )
-    .order("check_in_time", { ascending: false });
+    );
+
+  // Filter based on role
+  if (userProfile.role === 'trainer' && userProfile.branch_id) {
+    // Trainers can only see attendance from their branch
+    query = query.eq('branch_id', userProfile.branch_id);
+  } else if (userProfile.role === 'student') {
+    // Students can only see their own attendance
+    const { data: studentRecord } = await supabase
+      .from('students')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (studentRecord) {
+      query = query.eq('student_id', studentRecord.id);
+    } else {
+      // If no student record found, return empty array
+      return (
+        <>
+          <RoleBasedNav />
+          <HistoryClient initialAttendance={[]} />
+        </>
+      );
+    }
+  }
+  // Admin sees all attendance (no filter)
+
+  const { data: attendance, error } = await query.order("check_in_time", { ascending: false });
 
   if (error) {
     console.error("Error fetching attendance:", error);
   }
 
-  return <HistoryClient initialAttendance={attendance || []} />;
+  return (
+    <>
+      <RoleBasedNav />
+      <HistoryClient initialAttendance={attendance || []} />
+    </>
+  );
 }
