@@ -1,53 +1,44 @@
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Analytics } from "@vercel/analytics/react";
+import { AuthProvider } from '@/lib/contexts/auth-context';
+import { BranchProvider } from '@/lib/contexts/branch-context';
+import { BranchAutoSetter } from '@/components/branch-auto-setter';
 
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
-import { Geist_Mono, Exo as V0_Font_Exo, Geist_Mono as V0_Font_Geist_Mono } from 'next/font/google'
-import { BranchProvider } from '@/lib/contexts/branch-context'
-import { AuthProvider } from '@/lib/contexts/auth-context'
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
 
-// Initialize fonts
-const _exo = V0_Font_Exo({ subsets: ['latin'], weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"] })
-const _geistMono = V0_Font_Geist_Mono({ subsets: ['latin'], weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"] })
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: 'Control de Asistencias - Gimnasio',
-  description: 'Sistema de control de asistencias para gimnasios',
-  generator: 'v0.app',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
-}
+  title: "Control de Asistencias - Gimnasio",
+  description: "Sistema de gestión de asistencias para gimnasios con códigos QR",
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="es">
-      <body className={`font-sans antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <AuthProvider>
           <BranchProvider>
+            <BranchAutoSetter />
             {children}
           </BranchProvider>
         </AuthProvider>
         <Analytics />
       </body>
     </html>
-  )
+  );
 }

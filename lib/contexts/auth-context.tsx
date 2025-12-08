@@ -103,6 +103,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             console.log('✅ User profile loaded:', { email: data.email, role: data.role });
             setUser(data);
+
+            // Auto-set branch for trainers and students
+            if (data.branches && (data.role === 'trainer' || data.role === 'student')) {
+                console.log('🏢 Auto-setting branch for', data.role, ':', data.branches.name);
+                // We need to use the branch context here, but we can't call useBranch in this function
+                // So we'll set it in a useEffect instead
+            }
         } catch (error) {
             console.error('❌ Exception fetching user profile:', error);
         }

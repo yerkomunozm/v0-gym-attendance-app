@@ -6,10 +6,10 @@ import { redirect } from "next/navigation";
 export default async function TrainersPage() {
   const supabase = await createClient();
 
-  // Get current user
-  const { data: { session } } = await supabase.auth.getSession();
+  // Get current user - use getUser() for server-side authentication
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (authError || !user) {
     redirect('/login');
   }
 
@@ -17,7 +17,7 @@ export default async function TrainersPage() {
   const { data: userProfile } = await supabase
     .from('users')
     .select('role, branch_id')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
 
   if (!userProfile) {
