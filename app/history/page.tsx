@@ -6,10 +6,10 @@ import { redirect } from "next/navigation";
 export default async function HistoryPage() {
   const supabase = await createClient();
 
-  // Get current user
-  const { data: { session } } = await supabase.auth.getSession();
+  // Get current user - use getUser() for server-side authentication
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (authError || !user) {
     redirect('/login');
   }
 
@@ -17,7 +17,7 @@ export default async function HistoryPage() {
   const { data: userProfile } = await supabase
     .from('users')
     .select('role, branch_id')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
 
   if (!userProfile) {
@@ -57,7 +57,7 @@ export default async function HistoryPage() {
     const { data: studentRecord } = await supabase
       .from('students')
       .select('id')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (studentRecord) {

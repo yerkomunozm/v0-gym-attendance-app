@@ -32,35 +32,38 @@ export async function proxy(request: NextRequest) {
 
     try {
         const supabase = await createClient();
-        const { data: { session } } = await supabase.auth.getSession();
+
+        // Use getUser() instead of getSession() for server-side authentication
+        // This validates the session with Supabase Auth server
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
         // Redirect to login if not authenticated
-        if (!session) {
+        if (authError || !user) {
             const loginUrl = new URL('/login', request.url);
             loginUrl.searchParams.set('redirect', pathname);
             return NextResponse.redirect(loginUrl);
         }
 
         // Get user profile with role
-        const { data: user } = await supabase
+        const { data: userProfile } = await supabase
             .from('users')
             .select('role, active')
-            .eq('id', session.user.id)
+            .eq('id', user.id)
             .single();
 
         console.log('🔐 User check:', {
-            userId: session.user.id,
-            email: session.user.email,
-            userFound: !!user,
-            active: user?.active,
-            role: user?.role
+            userId: user.id,
+            email: user.email,
+            userFound: !!userProfile,
+            active: userProfile?.active,
+            role: userProfile?.role
         });
 
         // Check if user is active
-        if (!user || !user.active) {
+        if (!userProfile || !userProfile.active) {
             console.error('❌ User is inactive or not found:', {
-                userExists: !!user,
-                active: user?.active
+                userExists: !!userProfile,
+                active: userProfile?.active
             });
             const loginUrl = new URL('/login', request.url);
             loginUrl.searchParams.set('error', 'inactive');
@@ -68,7 +71,7 @@ export async function proxy(request: NextRequest) {
         }
 
         // Check role-based access
-        const userRole = user.role as 'admin' | 'trainer' | 'student';
+        const userRole = userProfile.role as 'admin' | 'trainer' | 'student';
 
         // Admin has access to everything
         if (userRole === 'admin') {

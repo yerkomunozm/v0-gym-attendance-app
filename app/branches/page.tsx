@@ -34,24 +34,39 @@ export default function BranchesPage() {
   }, []);
 
   const fetchBranches = async () => {
+    console.log('🔍 Fetching branches...');
     setLoading(true);
-    const { data, error } = await supabase
-      .from('branches')
-      .select('*')
-      .eq('active', true)
-      .order('name');
 
-    if (error) {
-      console.error('Error fetching branches:', error);
-    } else {
-      setBranches(data || []);
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+
+      if (error) {
+        console.error('❌ Error fetching branches:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        alert(`Error al cargar sedes: ${error.message}`);
+      } else {
+        console.log('✅ Branches loaded:', data?.length || 0);
+        setBranches(data || []);
+      }
+    } catch (err) {
+      console.error('❌ Exception fetching branches:', err);
+      alert('Error inesperado al cargar sedes');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (editingBranch) {
       // Update existing branch
       const { data, error } = await supabase
@@ -111,7 +126,9 @@ export default function BranchesPage() {
   };
 
   const handleSelectBranch = (branch: Branch) => {
+    console.log('📍 Selecting branch:', branch.name, branch.id);
     setSelectedBranch(branch);
+    console.log('✅ Branch selected and saved to localStorage');
   };
 
   if (loading) {
@@ -219,11 +236,10 @@ export default function BranchesPage() {
             {branches.map((branch) => (
               <Card
                 key={branch.id}
-                className={`cursor-pointer transition-all hover:shadow-lg ${
-                  selectedBranch?.id === branch.id
-                    ? 'ring-2 ring-blue-500 bg-blue-50'
-                    : 'hover:border-blue-200'
-                }`}
+                className={`cursor-pointer transition-all hover:shadow-lg ${selectedBranch?.id === branch.id
+                  ? 'ring-2 ring-blue-500 bg-blue-50'
+                  : 'hover:border-blue-200'
+                  }`}
                 onClick={() => handleSelectBranch(branch)}
               >
                 <CardHeader>
