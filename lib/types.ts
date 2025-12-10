@@ -40,6 +40,8 @@ export interface Student {
   } | null;
   plan_id?: string;
   plans?: Plan | null;
+  trainer_id?: string | null;
+  trainers?: Trainer | null;
 }
 
 export interface Branch {

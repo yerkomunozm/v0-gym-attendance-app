@@ -17,9 +17,10 @@ import { useBranch } from '@/lib/contexts/branch-context';
 interface StudentsClientProps {
   initialStudents: Student[];
   availablePlans: Plan[];
+  availableTrainers: { id: string; name: string; branch_id?: string }[];
 }
 
-export default function StudentsClient({ initialStudents, availablePlans }: StudentsClientProps) {
+export default function StudentsClient({ initialStudents, availablePlans, availableTrainers }: StudentsClientProps) {
   const { selectedBranch } = useBranch();
   const [students, setStudents] = useState<Student[]>(initialStudents);
   const [isAdding, setIsAdding] = useState(false);
@@ -30,6 +31,7 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
     phone: '',
     membership_status: 'active',
     plan_id: '',
+    trainer_id: '',
   });
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
@@ -57,6 +59,7 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
         membership_status: formData.membership_status,
         branch_id: selectedBranch.id,
         plan_id: formData.plan_id || null,
+        trainer_id: formData.trainer_id || null,
       };
 
       if (editingId) {
@@ -64,7 +67,7 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
           .from('students')
           .update(studentData)
           .eq('id', editingId)
-          .select('*, branches(name), plans(id, name)')
+          .select('*, branches(name), plans(id, name), trainers(id, name)')
           .single();
 
         if (error) throw error;
@@ -75,7 +78,7 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
         const { data, error } = await supabase
           .from('students')
           .insert([studentData])
-          .select('*, branches(name), plans(id, name)')
+          .select('*, branches(name), plans(id, name), trainers(id, name)')
           .single();
 
         if (error) throw error;
@@ -84,7 +87,7 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
         setIsAdding(false);
       }
 
-      setFormData({ name: '', email: '', phone: '', membership_status: 'active', plan_id: '' });
+      setFormData({ name: '', email: '', phone: '', membership_status: 'active', plan_id: '', trainer_id: '' });
       router.refresh();
     } catch (error) {
       console.error('Error saving student:', error);
@@ -99,6 +102,7 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
       phone: student.phone || '',
       membership_status: student.membership_status,
       plan_id: student.plan_id || '',
+      trainer_id: student.trainer_id || '',
     });
     setEditingId(student.id);
     setIsAdding(true);
@@ -126,7 +130,7 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
   const handleCancel = () => {
     setIsAdding(false);
     setEditingId(null);
-    setFormData({ name: '', email: '', phone: '', membership_status: 'active', plan_id: '' });
+    setFormData({ name: '', email: '', phone: '', membership_status: 'active', plan_id: '', trainer_id: '' });
   };
 
   const filteredStudents = students.filter(student => {
@@ -259,7 +263,7 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
                       </Select>
                     </div>
 
-                    <div className="space-y-2 md:col-span-2">
+                    <div className="space-y-2">
                       <Label htmlFor="plan">Plan</Label>
                       <Select
                         value={formData.plan_id}
@@ -272,6 +276,25 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
                           {availablePlans.map((plan) => (
                             <SelectItem key={plan.id} value={plan.id}>
                               {plan.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="trainer">Entrenador</Label>
+                      <Select
+                        value={formData.trainer_id}
+                        onValueChange={(value) => setFormData({ ...formData, trainer_id: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar entrenador..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableTrainers.map((trainer) => (
+                            <SelectItem key={trainer.id} value={trainer.id}>
+                              {trainer.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -351,6 +374,11 @@ export default function StudentsClient({ initialStudents, availablePlans }: Stud
                             <div className="flex items-center gap-1 text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full text-xs">
                               <CreditCard className="w-3 h-3" />
                               {student.plans.name}
+                            </div>
+                          )}
+                          {student.trainers && (
+                            <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-0.5 rounded-full text-xs">
+                              👤 {student.trainers.name}
                             </div>
                           )}
                         </div>
