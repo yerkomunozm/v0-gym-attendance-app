@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { StudentsClient } from "@/components/students-client";
+import StudentsClient from "@/components/students-client";
 import { RoleBasedNav } from "@/components/role-based-nav";
 import { redirect } from "next/navigation";
 
@@ -30,7 +30,8 @@ export default async function StudentsPage() {
     .select(`
       *,
       branches(name),
-      plans(name, price)
+      plans(name, price),
+      trainers(id, name)
     `);
 
   // Filter based on role
@@ -54,10 +55,27 @@ export default async function StudentsPage() {
     .eq("active", true)
     .order("name");
 
+  // Fetch trainers for the dropdown
+  let trainersQuery = supabase
+    .from("trainers")
+    .select("id, name, branch_id")
+    .eq("active", true);
+
+  // Filter trainers by branch for non-admin users
+  if (userProfile.role === 'trainer' && userProfile.branch_id) {
+    trainersQuery = trainersQuery.eq('branch_id', userProfile.branch_id);
+  }
+
+  const { data: trainers } = await trainersQuery.order("name");
+
   return (
     <>
       <RoleBasedNav />
-      <StudentsClient initialStudents={students || []} availablePlans={plans || []} />
+      <StudentsClient
+        initialStudents={students || []}
+        availablePlans={plans || []}
+        availableTrainers={trainers || []}
+      />
     </>
   );
 }

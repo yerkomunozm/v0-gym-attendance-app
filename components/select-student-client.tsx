@@ -54,41 +54,38 @@ export function SelectStudentClient() {
       console.log("[v0] Loading students...");
       const supabase = createClient();
 
-      // First get the trainer's branch
-      const { data: trainerData, error: trainerError } = await supabase
-        .from("trainers")
-        .select("branch_id")
-        .eq("id", trainerId)
-        .single();
+      try {
+        // Recuperar alumnos asociados al entrenador y que estén activos
+        console.log("[v0] Loading students for trainer:", trainerId);
 
-      if (trainerError) {
-        console.error("[v0] Error loading trainer details:", trainerError);
+        const { data, error } = await supabase
+          .from("students")
+          .select("*")
+          .eq("trainer_id", trainerId)
+          .eq("membership_status", "active")
+          .order("name");
+
+        if (error) {
+          console.error("[v0] Error loading students:", error);
+          setStatus({
+            type: "error",
+            message: "Error cargando la lista de alumnos. Verifica tu conexión o intenta recargar.",
+          });
+        }
+
+        if (data) {
+          console.log("[v0] Students loaded:", data.length);
+          setStudents(data);
+        }
+      } catch (err) {
+        console.error("[v0] Unexpected error loading students:", err);
+        setStatus({
+          type: "error",
+          message: "Ocurrió un error inesperado al cargar los alumnos.",
+        });
+      } finally {
         setIsLoadingStudents(false);
-        return;
       }
-
-      let query = supabase
-        .from("students")
-        .select("*")
-        .eq("membership_status", "active")
-        .order("name");
-
-      // Filter by branch if trainer has one
-      if (trainerData?.branch_id) {
-        query = query.eq("branch_id", trainerData.branch_id);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("[v0] Error loading students:", error);
-      }
-
-      if (!error && data) {
-        console.log("[v0] Students loaded:", data.length);
-        setStudents(data);
-      }
-      setIsLoadingStudents(false);
     }
 
     loadStudents();
@@ -258,8 +255,8 @@ export function SelectStudentClient() {
                 {status.type && (
                   <div
                     className={`flex items-center gap-2 p-4 rounded-lg ${status.type === "success"
-                        ? "bg-green-50 text-green-800"
-                        : "bg-red-50 text-red-800"
+                      ? "bg-green-50 text-green-800"
+                      : "bg-red-50 text-red-800"
                       }`}
                   >
                     {status.type === "success" ? (

@@ -144,7 +144,8 @@ export default function Home() {
               </>
             )}
 
-            <Card className="hover:shadow-lg transition-shadow">
+            {/* Registro Manual de Asistencia - Comentado temporalmente */}
+            {/* <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
                   <QrCode className="w-6 h-6 text-green-600" />
@@ -164,7 +165,7 @@ export default function Home() {
                   </Button>
                 </Link>
               </CardContent>
-            </Card>
+            </Card> */}
 
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
