@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/react";
+
 import { AuthProvider } from '@/lib/contexts/auth-context';
 import { BranchProvider } from '@/lib/contexts/branch-context';
 import { BranchAutoSetter } from '@/components/branch-auto-setter';
@@ -37,7 +37,7 @@ export default function RootLayout({
             {children}
           </BranchProvider>
         </AuthProvider>
-        <Analytics />
+
       </body>
     </html>
   );

@@ -123,8 +123,6 @@ describe('MyComponent', () => {
 })
 ```
 
-## Deployment
 
-This project is deployed on [AWS Amplify](https://aws.amazon.com/amplify/).
 
 
