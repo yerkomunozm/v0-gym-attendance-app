@@ -19,6 +19,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const clearPersistedBranch = () => {
+    if (typeof window !== 'undefined') {
+        try {
+            localStorage.removeItem('selectedBranch');
+        } catch (error) {
+            console.error('Error clearing branch selection from storage:', error);
+        }
+    }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
@@ -139,12 +149,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signOut = async () => {
         try {
-            await supabase.auth.signOut();
+            const { error } = await supabase.auth.signOut();
+
+            if (error) {
+                throw error;
+            }
+        } catch (error) {
+            console.error('Error signing out from Supabase:', error);
+        } finally {
+            clearPersistedBranch();
             setUser(null);
             setSupabaseUser(null);
-            router.push('/login');
-        } catch (error) {
-            console.error('Error signing out:', error);
+            router.replace('/login');
+            router.refresh();
         }
     };
 

@@ -15,48 +15,62 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft, CheckCircle, XCircle, UserCircle } from 'lucide-react';
 import Link from "next/link";
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { Student } from "@/lib/types";
 
-export function SelectStudentClient() {
-  const searchParams = useSearchParams();
+interface SelectStudentClientProps {
+  trainerId: string | null;
+  trainerName: string | null;
+  qrCode?: string | null;
+  initialStudents?: Student[];
+  initialLoadError?: string | null;
+}
+
+export function SelectStudentClient({
+  trainerId,
+  trainerName,
+  qrCode,
+  initialStudents = [],
+  initialLoadError = null,
+}: SelectStudentClientProps) {
   const router = useRouter();
 
-  const trainerId = searchParams.get("trainerId");
-  const trainerName = searchParams.get("trainerName");
-
-  console.log("[v0] URL Search Params:", {
+  console.log("[v0] Register params:", {
     trainerId,
     trainerName,
-    allParams: Object.fromEntries(searchParams.entries())
+    qrCode,
+    initialStudentsCount: initialStudents.length,
+    initialLoadError,
   });
 
   const [studentId, setStudentId] = useState("");
-  const [students, setStudents] = useState<Student[]>([]);
-  const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+  const [students, setStudents] = useState<Student[]>(initialStudents);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(initialStudents.length === 0);
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<{
     type: "success" | "error" | null;
     message: string;
-  }>({ type: null, message: "" });
+  }>(() => initialLoadError ? { type: "error", message: initialLoadError } : { type: null, message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    console.log("[v0] useEffect triggered - trainerId:", trainerId, "trainerName:", trainerName);
-
     if (!trainerId || !trainerName) {
       console.log("[v0] Missing parameters, redirecting to home");
       router.push("/");
       return;
     }
 
+    if (initialStudents.length > 0 || initialLoadError) {
+      setIsLoadingStudents(false);
+      return;
+    }
+
     async function loadStudents() {
-      console.log("[v0] Loading students...");
+      console.log("[v0] Client-side loading students...");
       const supabase = createClient();
 
       try {
-        // Recuperar alumnos asociados al entrenador y que estén activos
-        console.log("[v0] Loading students for trainer:", trainerId);
+        setIsLoadingStudents(true);
 
         const { data, error } = await supabase
           .from("students")
@@ -74,7 +88,6 @@ export function SelectStudentClient() {
         }
 
         if (data) {
-          console.log("[v0] Students loaded:", data.length);
           setStudents(data);
         }
       } catch (err) {
@@ -89,10 +102,19 @@ export function SelectStudentClient() {
     }
 
     loadStudents();
-  }, [trainerId, trainerName, router]);
+  }, [trainerId, trainerName, router, initialStudents.length, initialLoadError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!studentId) {
+      setStatus({
+        type: "error",
+        message: "Selecciona tu nombre antes de registrar la asistencia.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setStatus({ type: null, message: "" });
 
@@ -107,17 +129,13 @@ export function SelectStudentClient() {
             trainer_id: trainerId,
             student_id: studentId,
             student_name: selectedStudent?.name || "",
-            notes: notes || null,
+            branch_id: selectedStudent?.branch_id || null,
+            notes: notes.trim() ? notes.trim() : null,
           },
         ]);
 
       if (attendanceError) {
-        setStatus({
-          type: "error",
-          message: "Error al registrar asistencia. Intenta nuevamente.",
-        });
-        setIsSubmitting(false);
-        return;
+        throw attendanceError;
       }
 
       setStatus({
@@ -125,20 +143,20 @@ export function SelectStudentClient() {
         message: `Asistencia de ${selectedStudent?.name} registrada con ${trainerName}`,
       });
 
-      // Clear form after success
       setStudentId("");
       setNotes("");
 
-      // Redirect to success page after 1.5 seconds
-      setTimeout(() => {
-        router.push("/scan/success");
-      }, 1500);
+      router.replace("/scan/success");
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error registrando asistencia:", error);
       setStatus({
         type: "error",
-        message: "Error inesperado al registrar asistencia.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Error al registrar asistencia. Intenta nuevamente.",
       });
+    } finally {
       setIsSubmitting(false);
     }
   };

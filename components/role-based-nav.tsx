@@ -151,7 +151,13 @@ export function RoleBasedNav() {
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => signOut()} className="text-red-600">
+                                <DropdownMenuItem
+                                    className="text-red-600"
+                                    onSelect={(event) => {
+                                        event.preventDefault();
+                                        void signOut();
+                                    }}
+                                >
                                     <LogOut className="w-4 h-4 mr-2" />
                                     Cerrar Sesión
                                 </DropdownMenuItem>
