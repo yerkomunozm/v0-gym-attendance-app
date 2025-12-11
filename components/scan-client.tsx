@@ -32,19 +32,19 @@ export function ScanClient() {
 
   useEffect(() => {
     async function loadStudents() {
-      console.log("[v0] Loading students...");
+
       const supabase = createClient();
-      
+
       const { data, error } = await supabase
         .from("students")
         .select("*")
         .eq("membership_status", "active")
         .order("name");
 
-      console.log("[v0] Students query result:", { data, error, count: data?.length });
+
 
       if (error) {
-        console.error("[v0] Error loading students:", error);
+        console.error("Error loading students:", error);
       }
 
       if (!error && data) {
@@ -63,7 +63,7 @@ export function ScanClient() {
 
     try {
       const supabase = createClient();
-      
+
       const { data: trainer, error: trainerError } = await supabase
         .from("trainers")
         .select("*")
@@ -160,8 +160,8 @@ export function ScanClient() {
                           isLoadingStudents
                             ? "Cargando alumnos..."
                             : students.length === 0
-                            ? "No hay alumnos registrados"
-                            : "Selecciona tu nombre"
+                              ? "No hay alumnos registrados"
+                              : "Selecciona tu nombre"
                         }
                       />
                     </SelectTrigger>
@@ -182,8 +182,8 @@ export function ScanClient() {
                     {isLoadingStudents
                       ? "Cargando alumnos..."
                       : students.length === 0
-                      ? "No hay alumnos registrados. Ve a la sección de Alumnos para agregar uno."
-                      : `${students.length} alumno(s) disponible(s)`}
+                        ? "No hay alumnos registrados. Ve a la sección de Alumnos para agregar uno."
+                        : `${students.length} alumno(s) disponible(s)`}
                   </p>
                 </div>
 
@@ -215,11 +215,10 @@ export function ScanClient() {
 
                 {status.type && (
                   <div
-                    className={`flex items-center gap-2 p-4 rounded-lg ${
-                      status.type === "success"
+                    className={`flex items-center gap-2 p-4 rounded-lg ${status.type === "success"
                         ? "bg-green-50 text-green-800"
                         : "bg-red-50 text-red-800"
-                    }`}
+                      }`}
                   >
                     {status.type === "success" ? (
                       <CheckCircle className="w-5 h-5" />

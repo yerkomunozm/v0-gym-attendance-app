@@ -35,13 +35,7 @@ export function SelectStudentClient({
 }: SelectStudentClientProps) {
   const router = useRouter();
 
-  console.log("[v0] Register params:", {
-    trainerId,
-    trainerName,
-    qrCode,
-    initialStudentsCount: initialStudents.length,
-    initialLoadError,
-  });
+
 
   const [studentId, setStudentId] = useState("");
   const [students, setStudents] = useState<Student[]>(initialStudents);
@@ -55,7 +49,7 @@ export function SelectStudentClient({
 
   useEffect(() => {
     if (!trainerId || !trainerName) {
-      console.log("[v0] Missing parameters, redirecting to home");
+      console.error("Missing parameters, redirecting to home");
       router.push("/");
       return;
     }
@@ -66,7 +60,7 @@ export function SelectStudentClient({
     }
 
     async function loadStudents() {
-      console.log("[v0] Client-side loading students...");
+
       const supabase = createClient();
 
       try {
@@ -80,7 +74,7 @@ export function SelectStudentClient({
           .order("name");
 
         if (error) {
-          console.error("[v0] Error loading students:", error);
+          console.error("Error loading students:", error);
           setStatus({
             type: "error",
             message: "Error cargando la lista de alumnos. Verifica tu conexión o intenta recargar.",
@@ -91,7 +85,7 @@ export function SelectStudentClient({
           setStudents(data);
         }
       } catch (err) {
-        console.error("[v0] Unexpected error loading students:", err);
+        console.error("Unexpected error loading students:", err);
         setStatus({
           type: "error",
           message: "Ocurrió un error inesperado al cargar los alumnos.",
