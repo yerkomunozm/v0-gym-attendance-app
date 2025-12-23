@@ -27,6 +27,7 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
     email: "",
     phone: "",
     specialty: "",
+    password: "",
   });
 
   const supabase = createClient();
@@ -49,7 +50,12 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
       // Update existing trainer
       const { data, error } = await supabase
         .from("trainers")
-        .update(newTrainer)
+        .update({
+          name: newTrainer.name,
+          email: newTrainer.email,
+          phone: newTrainer.phone,
+          specialty: newTrainer.specialty
+        })
         .eq("id", editingTrainer.id)
         .select()
         .single();
@@ -62,48 +68,52 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
 
       if (data) {
         setTrainers(trainers.map(t => t.id === data.id ? data : t));
-        setNewTrainer({ name: "", email: "", phone: "", specialty: "" });
+        setNewTrainer({ name: "", email: "", phone: "", specialty: "", password: "" });
         setEditingTrainer(null);
         setIsAdding(false);
       }
     } else {
-      // Create new trainer
-      const { data, error } = await supabase
-        .from("trainers")
-        .insert([
-          {
-            ...newTrainer,
-            qr_code: "temp",
-            branch_id: selectedBranch.id
-          },
-        ])
-        .select()
-        .single();
+      // Create new trainer using Edge Function
+      const { data: sessionData } = await supabase.auth.getSession();
 
-      if (error) {
-        console.error("Error adding trainer:", error);
-        alert("Error al agregar entrenador");
+      if (!sessionData.session) {
+        alert('No estás autenticado');
         return;
       }
 
-      if (data) {
-        // Generate a short code for the QR
-        const shortCode = `TR-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-trainer`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${sessionData.session.access_token}`,
+            },
+            body: JSON.stringify({
+              name: newTrainer.name,
+              email: newTrainer.email,
+              phone: newTrainer.phone,
+              specialty: newTrainer.specialty,
+              branch_id: selectedBranch.id,
+              password: newTrainer.password,
+            }),
+          }
+        );
 
-        const { data: updatedData, error: updateError } = await supabase
-          .from("trainers")
-          .update({ qr_code: shortCode })
-          .eq("id", data.id)
-          .select()
-          .single();
+        const result = await response.json();
 
-        if (updateError) {
-          console.error("Error updating QR code:", updateError);
+        if (!response.ok) {
+          throw new Error(result.error || 'Error al crear entrenador');
         }
 
-        setTrainers([...trainers, updatedData || data]);
-        setNewTrainer({ name: "", email: "", phone: "", specialty: "" });
+        setTrainers([...trainers, result.trainer]);
+        setNewTrainer({ name: "", email: "", phone: "", specialty: "", password: "" });
         setIsAdding(false);
+        alert(result.message || 'Entrenador creado exitosamente');
+      } catch (error) {
+        console.error("Error creating trainer:", error);
+        alert(error instanceof Error ? error.message : "Error al agregar entrenador");
       }
     }
   };
@@ -114,14 +124,15 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
       name: trainer.name,
       email: trainer.email || "",
       phone: trainer.phone || "",
-      specialty: trainer.specialty || ""
+      specialty: trainer.specialty || "",
+      password: "" // Password not editable
     });
     setIsAdding(true);
   };
 
   const handleCancelEdit = () => {
     setEditingTrainer(null);
-    setNewTrainer({ name: "", email: "", phone: "", specialty: "" });
+    setNewTrainer({ name: "", email: "", phone: "", specialty: "", password: "" });
     setIsAdding(false);
   };
 
@@ -265,6 +276,25 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
                         }
                       />
                     </div>
+                    {!editingTrainer && (
+                      <div>
+                        <Label htmlFor="password">Contraseña Inicial *</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          required={!editingTrainer}
+                          value={newTrainer.password}
+                          onChange={(e) =>
+                            setNewTrainer({ ...newTrainer, password: e.target.value })
+                          }
+                          placeholder="Mínimo 6 caracteres"
+                          minLength={6}
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                          El entrenador deberá cambiar esta contraseña en su primer inicio de sesión
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button type="submit">

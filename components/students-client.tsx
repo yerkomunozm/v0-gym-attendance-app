@@ -32,6 +32,7 @@ export default function StudentsClient({ initialStudents, availablePlans, availa
     membership_status: 'active',
     plan_id: '',
     trainer_id: '',
+    password: '',
   });
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
@@ -51,18 +52,24 @@ export default function StudentsClient({ initialStudents, availablePlans, availa
       return;
     }
 
-    try {
-      const studentData = {
-        name: formData.name,
-        email: formData.email || null,
-        phone: formData.phone || null,
-        membership_status: formData.membership_status,
-        branch_id: selectedBranch.id,
-        plan_id: formData.plan_id || null,
-        trainer_id: formData.trainer_id || null,
-      };
+    if (!formData.email.trim()) {
+      alert('El email es obligatorio');
+      return;
+    }
 
+    try {
       if (editingId) {
+        // Update existing student
+        const studentData = {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null,
+          membership_status: formData.membership_status,
+          branch_id: selectedBranch.id,
+          plan_id: formData.plan_id || null,
+          trainer_id: formData.trainer_id || null,
+        };
+
         const { data, error } = await supabase
           .from('students')
           .update(studentData)
@@ -75,23 +82,51 @@ export default function StudentsClient({ initialStudents, availablePlans, availa
         setStudents(students.map(s => s.id === editingId ? data : s));
         setEditingId(null);
       } else {
-        const { data, error } = await supabase
-          .from('students')
-          .insert([studentData])
-          .select('*, branches(name), plans(id, name), trainers(id, name)')
-          .single();
+        // Create new student using Edge Function
+        const { data: sessionData } = await supabase.auth.getSession();
 
-        if (error) throw error;
+        if (!sessionData.session) {
+          alert('No estás autenticado');
+          return;
+        }
 
-        setStudents([...students, data]);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-student`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${sessionData.session.access_token}`,
+            },
+            body: JSON.stringify({
+              name: formData.name,
+              email: formData.email,
+              phone: formData.phone,
+              membership_status: formData.membership_status,
+              branch_id: selectedBranch.id,
+              plan_id: formData.plan_id || null,
+              trainer_id: formData.trainer_id || null,
+              password: formData.password,
+            }),
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Error al crear alumno');
+        }
+
+        setStudents([...students, result.student]);
         setIsAdding(false);
+        alert(result.message || 'Alumno creado exitosamente');
       }
 
-      setFormData({ name: '', email: '', phone: '', membership_status: 'active', plan_id: '', trainer_id: '' });
+      setFormData({ name: '', email: '', phone: '', membership_status: 'active', plan_id: '', trainer_id: '', password: '' });
       router.refresh();
     } catch (error) {
       console.error('Error saving student:', error);
-      alert('Error al guardar el alumno');
+      alert(error instanceof Error ? error.message : 'Error al guardar el alumno');
     }
   };
 
@@ -103,6 +138,7 @@ export default function StudentsClient({ initialStudents, availablePlans, availa
       membership_status: student.membership_status,
       plan_id: student.plan_id || '',
       trainer_id: student.trainer_id || '',
+      password: '', // Password not editable
     });
     setEditingId(student.id);
     setIsAdding(true);
@@ -130,7 +166,7 @@ export default function StudentsClient({ initialStudents, availablePlans, availa
   const handleCancel = () => {
     setIsAdding(false);
     setEditingId(null);
-    setFormData({ name: '', email: '', phone: '', membership_status: 'active', plan_id: '', trainer_id: '' });
+    setFormData({ name: '', email: '', phone: '', membership_status: 'active', plan_id: '', trainer_id: '', password: '' });
   };
 
   const filteredStudents = students.filter(student => {
@@ -226,10 +262,11 @@ export default function StudentsClient({ initialStudents, availablePlans, availa
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email">Email *</Label>
                       <Input
                         id="email"
                         type="email"
+                        required
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="juan@example.com"
@@ -300,6 +337,24 @@ export default function StudentsClient({ initialStudents, availablePlans, availa
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {!editingId && (
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Contraseña Inicial *</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          required={!editingId}
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          placeholder="Mínimo 6 caracteres"
+                          minLength={6}
+                        />
+                        <p className="text-xs text-slate-500">
+                          El alumno deberá cambiar esta contraseña en su primer inicio de sesión
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-2 justify-end">
