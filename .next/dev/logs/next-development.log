@@ -1,0 +1,17 @@
+[00:00:00.899] Server  LOG      ✓ Ready in 674ms
+[00:00:14.746] Browser LOG     🔍 Fetching user profile for ID: f7ef88c6-0a2a-4906-a2a9-733b2922a178
+[00:00:15.513] Browser LOG     ✅ User profile loaded: {"email":"admin@test.com","role":"admin"}
+[00:00:15.513] Browser LOG     🔍 Fetching user profile for ID: f7ef88c6-0a2a-4906-a2a9-733b2922a178
+[00:00:15.821] Browser LOG     ✅ User profile loaded: {"email":"admin@test.com","role":"admin"}
+[00:00:16.248] Server  LOG     🔐 User check: {}
+[00:00:21.801] Server  LOG     🔐 User check: {}
+[00:00:22.122] Browser LOG     🔍 Fetching branches...
+[00:00:22.122] Browser LOG     [2;38;2;124;124;124m%s[0m 🔍 Fetching branches...
+[00:00:22.400] Browser LOG     ✅ Branches loaded: 4
+[00:00:22.614] Browser LOG     ✅ Branches loaded: 4
+[00:00:23.181] Browser LOG     📍 Selecting branch: Sede Reñaca 94e14fa9-09fc-4c82-92cb-71bd6a4b0598
+[00:00:23.181] Browser LOG     ✅ Branch selected and saved to localStorage
+[00:00:25.627] Server  LOG     🔐 User check: {}
+[00:00:40.512] Server  LOG     🔐 User check: {}
+[00:02:10.918] Server  LOG     🔐 User check: {}
+[00:02:13.355] Server  LOG     🔐 User check: {}
