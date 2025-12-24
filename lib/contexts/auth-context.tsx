@@ -76,52 +76,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const fetchUserProfile = async (userId: string) => {
         try {
-            console.log('🔍 Fetching user profile for ID:', userId);
-
             const { data, error } = await supabase
                 .from('users')
                 .select(`
-          *,
-          branches (
-            id,
-            name,
-            address,
-            phone,
-            active,
-            created_at
-          )
-        `)
+                    *,
+                    branches (
+                        id,
+                        name,
+                        address,
+                        phone,
+                        active,
+                        created_at
+                    )
+                `)
                 .eq('id', userId)
                 .single();
 
             if (error) {
-                console.error('❌ Error fetching user profile:', {
-                    message: error.message,
-                    details: error.details,
-                    hint: error.hint,
-                    code: error.code
-                });
+                console.error('❌ Error fetching user profile:', error);
 
-                // Si el error es que no se encontró el usuario
                 if (error.code === 'PGRST116') {
-                    console.error('⚠️ Usuario no encontrado en tabla users. El usuario existe en auth.users pero no tiene perfil en public.users');
-                    console.error('💡 Solución: Ejecuta el script scripts/fix_missing_users.sql en Supabase SQL Editor');
+                    console.error('⚠️ Usuario no encontrado en tabla users.');
                 }
-
                 return;
             }
 
-            console.log('✅ User profile loaded:', { email: data.email, role: data.role });
             setUser(data);
-
-            // Auto-set branch for trainers and students
-            if (data.branches && (data.role === 'trainer' || data.role === 'student')) {
-                console.log('🏢 Auto-setting branch for', data.role, ':', data.branches.name);
-                // We need to use the branch context here, but we can't call useBranch in this function
-                // So we'll set it in a useEffect instead
-            }
         } catch (error) {
-            console.error('❌ Exception fetching user profile:', error);
+            console.error('❌ Exception in fetchUserProfile:', error);
         }
     };
 

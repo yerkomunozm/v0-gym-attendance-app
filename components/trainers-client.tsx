@@ -11,6 +11,7 @@ import { Plus, Trash2, Download, ArrowLeft, Search, Building2, Pencil } from 'lu
 import { QRCodeSVG } from "qrcode.react";
 import Link from "next/link";
 import { useBranch } from "@/lib/contexts/branch-context";
+import { useAuth } from "@/lib/contexts/auth-context";
 
 interface TrainersClientProps {
   initialTrainers: Trainer[];
@@ -18,6 +19,7 @@ interface TrainersClientProps {
 
 export function TrainersClient({ initialTrainers }: TrainersClientProps) {
   const { selectedBranch } = useBranch();
+  const { isAdmin } = useAuth();
   const [trainers, setTrainers] = useState<Trainer[]>(initialTrainers);
   const [isAdding, setIsAdding] = useState(false);
   const [editingTrainer, setEditingTrainer] = useState<Trainer | null>(null);
@@ -201,10 +203,12 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
               </div>
               <h1 className="text-4xl font-bold text-slate-900">Gestión de Entrenadores</h1>
             </div>
-            <Button onClick={() => setIsAdding(true)} disabled={!selectedBranch}>
-              <Plus className="w-4 h-4 mr-2" />
-              Agregar Entrenador
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setIsAdding(true)} disabled={!selectedBranch}>
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Entrenador
+              </Button>
+            )}
           </div>
 
           {!selectedBranch && isAdding && (
@@ -335,24 +339,26 @@ export function TrainersClient({ initialTrainers }: TrainersClientProps) {
               <Card key={trainer.id} className="relative">
                 <CardHeader>
                   <CardTitle className="text-lg">{trainer.name}</CardTitle>
-                  <div className="absolute top-4 right-4 flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      onClick={() => handleEditTrainer(trainer)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleDeleteTrainer(trainer.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  {isAdmin && (
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={() => handleEditTrainer(trainer)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleDeleteTrainer(trainer.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 mb-4">

@@ -55,6 +55,7 @@ export default async function StudentsPage() {
     .eq("active", true)
     .order("name");
 
+
   // Fetch trainers for the dropdown
   let trainersQuery = supabase
     .from("trainers")

@@ -1,0 +1,11 @@
+{
+    "deno.enable": false,
+    "[typescript]": {
+        "editor.defaultFormatter": "deno.deno-vsc"
+    },
+    "deno.unstable": true,
+    "deno.importMap": "supabase/functions/deno.json",
+    "deno.enablePaths": [
+        "supabase/functions"
+    ]
+}

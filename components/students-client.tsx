@@ -329,11 +329,13 @@ export default function StudentsClient({ initialStudents, availablePlans, availa
                           <SelectValue placeholder="Seleccionar entrenador..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableTrainers.map((trainer) => (
-                            <SelectItem key={trainer.id} value={trainer.id}>
-                              {trainer.name}
-                            </SelectItem>
-                          ))}
+                          {availableTrainers
+                            .filter(trainer => !selectedBranch || trainer.branch_id === selectedBranch.id)
+                            .map((trainer) => (
+                              <SelectItem key={trainer.id} value={trainer.id}>
+                                {trainer.name}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>
